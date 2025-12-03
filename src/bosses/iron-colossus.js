@@ -6,15 +6,19 @@ class IronColossus extends Boss {
         this.name = 'Iron Colossus';
         this.color = '#696969';
         this.size = 40;
-        this.speed = 0.7;
-        this.maxHealth = 300;
+        this.speed = 36; // 0.6 * 60
+        this.maxHealth = 250;
         this.health = this.maxHealth;
         this.targetDistance = 150;
+
+        // Ability Pool
+        this.abilityPool = ['groundSlam', 'boulderToss', 'chargeRush', 'seismicFissure', 'earthquake'];
+        this.startingAbility = 'groundSlam';
 
         this.slamCooldown = 0;
         this.isCharging = false;
         this.chargeAngle = 0;
-        this.chargeSpeed = 5;
+        this.chargeSpeed = 300; // 5 * 60
         this.chargeDuration = 0;
         this.bounceCount = 0;
 
@@ -24,14 +28,14 @@ class IronColossus extends Boss {
         this.shieldOrbitAngle = 0;
     }
 
-    update(player, projectiles, level, particles) {
-        super.update(player, projectiles, level, particles);
-        this.updateShields(projectiles, particles);
+    update(player, projectiles, level, particles, dt) {
+        super.update(player, projectiles, level, particles, dt);
+        this.updateShields(projectiles, particles, level, dt);
     }
 
-    updateShields(projectiles, particles) {
-        // Activate Armor in Phase 2
-        if (this.phase >= 2 && this.shieldGenerators.length === 0 && !this.armorBroken) {
+    updateShields(projectiles, particles, level, dt) {
+        // Activate Armor in Phase 2 (Level 5+)
+        if (level >= 5 && this.phase >= 2 && this.shieldGenerators.length === 0 && !this.armorBroken) {
             if (!this.armorActive) {
                 this.armorActive = true;
                 this.armorBroken = false; // Reset broken state
@@ -51,7 +55,7 @@ class IronColossus extends Boss {
 
         // Update generators
         if (this.armorActive) {
-            this.shieldOrbitAngle += 0.02;
+            this.shieldOrbitAngle += 1.2 * dt; // 0.02 * 60
             this.shieldGenerators.forEach(gen => {
                 gen.x = this.x + Math.cos(gen.angle + this.shieldOrbitAngle) * (this.size + 40);
                 gen.y = this.y + Math.sin(gen.angle + this.shieldOrbitAngle) * (this.size + 40);
@@ -119,13 +123,13 @@ class IronColossus extends Boss {
         return false; // Not handled, check main body
     }
 
-    handleAttacks(player, projectiles, level, particles) {
-        // Level 1: Ground Slam
-        if (level >= 1 && this.slamCooldown === 0) {
+    handleAttacks(player, projectiles, level, particles, dt) {
+        // Ability 1: Ground Slam
+        if (this.unlockedAbilities.includes('groundSlam') && this.slamCooldown === 0) {
             // Create shockwave
             const step = Math.PI / (8 + this.projectileCount * 2);
             for (let angle = 0; angle < Math.PI * 2; angle += step) {
-                const speed = 2 * this.projectileSpeedMultiplier;
+                const speed = 120 * this.projectileSpeedMultiplier; // 2 * 60
                 projectiles.push(new Projectile(
                     this.x, this.y,
                     Math.cos(angle) * speed, Math.sin(angle) * speed,
@@ -134,12 +138,12 @@ class IronColossus extends Boss {
             }
             this.slamCooldown = this.attackCooldownMax * 1.5;
         }
-        if (this.slamCooldown > 0) this.slamCooldown--;
+        if (this.slamCooldown > 0) this.slamCooldown -= dt;
 
-        // Level 5: Boulder Toss
-        if (level >= 5 && this.attackCooldown === 0) {
+        // Ability 2: Boulder Toss
+        if (this.unlockedAbilities.includes('boulderToss') && this.attackCooldown === 0) {
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
-            const speed = 4.5 * this.projectileSpeedMultiplier;
+            const speed = 270 * this.projectileSpeedMultiplier; // 4.5 * 60
             const count = 1 + this.projectileCount;
 
             for (let i = 0; i < count; i++) {
@@ -153,17 +157,17 @@ class IronColossus extends Boss {
             this.attackCooldown = this.attackCooldownMax;
         }
 
-        // Level 10: Charge Rush (Phase 2 Aggression)
-        if (level >= 10 && !this.isCharging && Math.random() < 0.005) {
+        // Ability 3: Charge Rush
+        if (this.unlockedAbilities.includes('chargeRush') && !this.isCharging && Math.random() < 0.005) {
             this.isCharging = true;
             this.chargeAngle = Math.atan2(player.y - this.y, player.x - this.x);
-            this.chargeDuration = 60;
+            this.chargeDuration = 1.0; // 60 frames / 60
             this.bounceCount = 0;
         }
 
         if (this.isCharging) {
-            this.x += Math.cos(this.chargeAngle) * this.chargeSpeed;
-            this.y += Math.sin(this.chargeAngle) * this.chargeSpeed;
+            this.x += Math.cos(this.chargeAngle) * this.chargeSpeed * dt;
+            this.y += Math.sin(this.chargeAngle) * this.chargeSpeed * dt;
 
             // Bounce off walls
             if (this.x < this.size || this.x > this.canvas.width - this.size) {
@@ -177,24 +181,24 @@ class IronColossus extends Boss {
                 this.bounceCount++;
             }
 
-            this.chargeDuration--;
+            this.chargeDuration -= dt;
             if (this.chargeDuration <= 0 || this.bounceCount > 3) {
                 this.isCharging = false;
             }
         }
 
-        // Phase 3: Meltdown (Lava Trail)
-        if (this.phase === 3) {
+        // Phase 3: Meltdown (Lava Trail) (Level 5+)
+        if (level >= 5 && this.phase === 3) {
             if (particles && Math.random() < 0.2) {
                 particles.push(new Particle(this.x, this.y, '#ff4500', 4));
                 // Ideally this would leave a damaging zone, but for now visual only
             }
             // Increase attack speed in Phase 3
-            if (this.attackCooldown > 0) this.attackCooldown--;
+            if (this.attackCooldown > 0) this.attackCooldown -= dt;
         }
 
-        // Level 15: Seismic Fissure
-        if (level >= 15 && Math.random() < 0.004) {
+        // Ability 4: Seismic Fissure
+        if (this.unlockedAbilities.includes('seismicFissure') && Math.random() < 0.004) {
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
 
             for (let i = 0; i < 10; i++) {
@@ -213,8 +217,8 @@ class IronColossus extends Boss {
             }
         }
 
-        // Level 20: Earthquake
-        if (level >= 20 && Math.random() < 0.001) {
+        // Ability 5: Earthquake
+        if (this.unlockedAbilities.includes('earthquake') && Math.random() < 0.001) {
             // Create multiple explosion zones with safe spots
             for (let i = 0; i < 12; i++) {
                 setTimeout(() => {

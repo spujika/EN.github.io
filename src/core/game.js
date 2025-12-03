@@ -192,6 +192,9 @@ class Game {
         // REMOVED per user request: Stats do not increase by level, only by modifiers
         this.boss.health = this.boss.maxHealth;
 
+        // Unlock abilities based on level
+        this.boss.unlockAbilities(this.level);
+
         // Apply active modifiers
         this.modifierManager.applyModifiers(this.boss);
 
@@ -229,6 +232,7 @@ class Game {
 
         // Cap delta time to prevent huge jumps (e.g., if tab was inactive)
         const cappedDelta = Math.min(deltaTime, 100);
+        const dt = cappedDelta / 1000; // Convert to seconds
 
         // Update entities
         // Always read keys, even during dash (so we capture releases)
@@ -255,13 +259,13 @@ class Game {
             delete this.keys['2']; // Prevent spamming
         }
 
-        this.player.update(this.mouseX, this.mouseY, this.isMouseDown, this.projectiles, cappedDelta);
-        this.boss.update(this.player, this.projectiles, this.level, this.particles);
+        this.player.update(this.mouseX, this.mouseY, this.isMouseDown, this.projectiles, cappedDelta); // Player uses ms for some things, check this later
+        this.boss.update(this.player, this.projectiles, this.level, this.particles, dt);
 
         // Update projectiles
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const proj = this.projectiles[i];
-            proj.update(this.canvas);
+            proj.update(this.canvas, dt);
 
             // Remove if out of bounds or inactive
             if (proj.x < 0 || proj.x > this.canvas.width ||
@@ -374,7 +378,7 @@ class Game {
 
         // Update particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
-            this.particles[i].update();
+            this.particles[i].update(dt);
             if (this.particles[i].life <= 0) {
                 this.particles.splice(i, 1);
             }
@@ -455,7 +459,8 @@ class Game {
         this.ui.showExtraction(
             this.currentReward,
             () => this.handleExtract(),
-            () => this.handleContinue()
+            () => this.handleContinue(),
+            this.level
         );
     }
 

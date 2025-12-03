@@ -6,10 +6,14 @@ class ChaosPhantom extends Boss {
         this.name = 'Chaos Phantom';
         this.color = '#ff00ff';
         this.size = 26;
-        this.speed = 1.7;
-        this.maxHealth = 190;
+        this.speed = 90; // 1.5 * 60
+        this.maxHealth = 160;
         this.health = this.maxHealth;
         this.targetDistance = 200;
+
+        // Ability Pool
+        this.abilityPool = ['chaosBolt', 'phaseShift', 'mirrorImage', 'realityWarp', 'pandemonium'];
+        this.startingAbility = 'chaosBolt';
 
         this.clones = [];
         this.controlsInverted = false;
@@ -37,16 +41,20 @@ class ChaosPhantom extends Boss {
         return super.takeDamage(amount, particles);
     }
 
-    update(player, projectiles, level, particles) {
-        super.update(player, projectiles, level, particles);
+    update(player, projectiles, level, particles, dt) {
+        super.update(player, projectiles, level, particles, dt);
 
         // Phase 2+: Real Clone Mechanic (Once per phase)
-        if (this.phase === 2 && !this.hasUsedClonePhase2 && !this.realCloneActive) {
-            this.activateRealClone();
-            this.hasUsedClonePhase2 = true;
-        } else if (this.phase === 3 && !this.hasUsedClonePhase3 && !this.realCloneActive) {
-            this.activateRealClone();
-            this.hasUsedClonePhase3 = true;
+        // Phase 2+: Real Clone Mechanic (Once per phase)
+        // Only trigger if level >= 5 (User requested no clones at level 1)
+        if (level >= 5) {
+            if (this.phase === 2 && !this.hasUsedClonePhase2 && !this.realCloneActive) {
+                this.activateRealClone();
+                this.hasUsedClonePhase2 = true;
+            } else if (this.phase === 3 && !this.hasUsedClonePhase3 && !this.realCloneActive) {
+                this.activateRealClone();
+                this.hasUsedClonePhase3 = true;
+            }
         }
 
         // Manage Clones
@@ -66,38 +74,38 @@ class ChaosPhantom extends Boss {
             }
         }
 
-        // Phase 2+: Screen Tear
-        if (this.phase >= 2) {
+        // Phase 2+: Screen Tear (Level 5+)
+        if (level >= 5 && this.phase >= 2) {
             if (this.screenTearCooldown <= 0 && Math.random() < 0.003) {
                 this.screenTearActive = true;
-                this.screenTearDuration = 120; // 2 seconds
-                this.screenTearCooldown = 400;
+                this.screenTearDuration = 2.0; // 120 frames / 60
+                this.screenTearCooldown = 6.66; // 400 frames / 60
             }
-            if (this.screenTearCooldown > 0) this.screenTearCooldown--;
+            if (this.screenTearCooldown > 0) this.screenTearCooldown -= dt;
 
             if (this.screenTearActive) {
-                this.screenTearDuration--;
+                this.screenTearDuration -= dt;
                 if (this.screenTearDuration <= 0) {
                     this.screenTearActive = false;
                 }
             }
         }
 
-        // Phase 3: Reality Collapse (Randomize projectile colors)
-        if (this.phase === 3) {
+        // Phase 3: Reality Collapse (Randomize projectile colors) (Level 5+)
+        if (level >= 5 && this.phase === 3) {
             // Invert controls more often
             if (!this.controlsInverted && Math.random() < 0.01) {
                 this.controlsInverted = true;
-                this.controlsInvertDuration = 120;
+                this.controlsInvertDuration = 2.0; // 120 frames / 60
             }
         }
     }
 
-    updateAI(player, distance) {
+    updateAI(player, distance, dt) {
         if (this.realCloneActive) {
             return; // Don't move during clone phase
         }
-        super.updateAI(player, distance);
+        super.updateAI(player, distance, dt);
     }
 
     activateRealClone() {
@@ -156,9 +164,9 @@ class ChaosPhantom extends Boss {
         return false;
     }
 
-    handleAttacks(player, projectiles, level, particles) {
-        // Level 1: Chaos Bolt (random patterns)
-        if (level >= 1 && this.attackCooldown === 0 && !this.realCloneActive) {
+    handleAttacks(player, projectiles, level, particles, dt) {
+        // Ability 1: Chaos Bolt
+        if (this.unlockedAbilities.includes('chaosBolt') && this.attackCooldown === 0 && !this.realCloneActive) {
             const patterns = ['spread', 'spiral', 'circle', 'burst'];
             const pattern = patterns[Math.floor(Math.random() * patterns.length)];
 
@@ -167,7 +175,7 @@ class ChaosPhantom extends Boss {
                     const spreadCount = 3 + this.projectileCount;
                     for (let i = -spreadCount; i <= spreadCount; i++) {
                         const angle = this.angle + (i * Math.PI / 12);
-                        const speed = 5.0 * this.projectileSpeedMultiplier;
+                        const speed = 300 * this.projectileSpeedMultiplier; // 5.0 * 60
                         projectiles.push(new Projectile(
                             this.x, this.y,
                             Math.cos(angle) * speed, Math.sin(angle) * speed,
@@ -179,7 +187,7 @@ class ChaosPhantom extends Boss {
                     const spiralCount = 12 + (this.projectileCount * 2);
                     for (let i = 0; i < spiralCount; i++) {
                         const angle = (i / spiralCount) * Math.PI * 2 + (Date.now() / 200);
-                        const speed = 3.5 * this.projectileSpeedMultiplier;
+                        const speed = 210 * this.projectileSpeedMultiplier; // 3.5 * 60
                         projectiles.push(new Projectile(
                             this.x, this.y,
                             Math.cos(angle) * speed, Math.sin(angle) * speed,
@@ -191,7 +199,7 @@ class ChaosPhantom extends Boss {
                     const circleCount = 16 + (this.projectileCount * 4);
                     for (let i = 0; i < circleCount; i++) {
                         const angle = (i / circleCount) * Math.PI * 2;
-                        const speed = 4.5 * this.projectileSpeedMultiplier;
+                        const speed = 270 * this.projectileSpeedMultiplier; // 4.5 * 60
                         projectiles.push(new Projectile(
                             this.x, this.y,
                             Math.cos(angle) * speed, Math.sin(angle) * speed,
@@ -203,18 +211,18 @@ class ChaosPhantom extends Boss {
                     const burstCount = 1 + this.projectileCount;
                     for (let i = 0; i < burstCount; i++) {
                         projectiles.push(new HomingProjectile(
-                            this.x, this.y, 4.5 * this.projectileSpeedMultiplier,
+                            this.x, this.y, 270 * this.projectileSpeedMultiplier, // 4.5 * 60
                             15 * this.damageMultiplier, 'boss', player, '#ff00ff'
                         ));
                     }
                     break;
             }
 
-            this.attackCooldown = this.attackCooldownMax;
+            this.attackCooldown = 3.0; // 180 frames / 60
         }
 
-        // Level 5: Phase Shift (teleport)
-        if (level >= 5 && Math.random() < 0.008) {
+        // Ability 2: Phase Shift
+        if (this.unlockedAbilities.includes('phaseShift') && Math.random() < 0.008) {
             this.x = Math.random() * this.canvas.width;
             this.y = Math.random() * this.canvas.height;
 
@@ -225,8 +233,8 @@ class ChaosPhantom extends Boss {
             }
         }
 
-        // Level 10: Mirror Image
-        if (level >= 10) {
+        // Ability 3: Mirror Image
+        if (this.unlockedAbilities.includes('mirrorImage')) {
             this.clones = this.clones.filter(c => c.lifetime > 0);
             const maxClones = 2 + this.projectileCount;
 
@@ -234,43 +242,43 @@ class ChaosPhantom extends Boss {
                 this.clones.push({
                     x: this.x + (Math.random() - 0.5) * 100,
                     y: this.y + (Math.random() - 0.5) * 100,
-                    lifetime: 180,
-                    shootCooldown: 30
+                    lifetime: 3.0, // 180 frames / 60
+                    shootCooldown: 0.5 // 30 frames / 60
                 });
             }
 
             this.clones.forEach(clone => {
-                clone.lifetime--;
-                clone.shootCooldown--;
+                clone.lifetime -= dt;
+                clone.shootCooldown -= dt;
 
                 if (clone.shootCooldown <= 0) {
                     const angle = Math.atan2(player.y - clone.y, player.x - clone.x);
-                    const speed = 4.5 * this.projectileSpeedMultiplier;
+                    const speed = 270 * this.projectileSpeedMultiplier; // 4.5 * 60
                     projectiles.push(new Projectile(
                         clone.x, clone.y,
                         Math.cos(angle) * speed, Math.sin(angle) * speed,
                         10 * this.damageMultiplier, 'boss', '#ff1493', 5
                     ));
-                    clone.shootCooldown = 60;
+                    clone.shootCooldown = 1.0; // 60 frames / 60
                 }
             });
         }
 
-        // Level 15: Reality Warp (invert controls)
-        if (level >= 15 && !this.controlsInverted && Math.random() < 0.003) {
+        // Ability 4: Reality Warp
+        if (this.unlockedAbilities.includes('realityWarp') && !this.controlsInverted && Math.random() < 0.003) {
             this.controlsInverted = true;
-            this.controlsInvertDuration = 180;
+            this.controlsInvertDuration = 3.0; // 180 frames / 60
         }
 
         if (this.controlsInverted) {
-            this.controlsInvertDuration--;
+            this.controlsInvertDuration -= dt;
             if (this.controlsInvertDuration <= 0) {
                 this.controlsInverted = false;
             }
         }
 
-        // Level 20: Pandemonium (use all attacks)
-        if (level >= 20 && Math.random() < 0.015) {
+        // Ability 5: Pandemonium
+        if (this.unlockedAbilities.includes('pandemonium') && Math.random() < 0.015) {
             // Randomly use any previous attack
             this.attackCooldown = 0;
         }
@@ -333,7 +341,7 @@ class ChaosPhantom extends Boss {
         // Draw Legacy Mirror Image Clones (Level 10)
         this.clones.forEach(clone => {
             if (!clone.isFake && clone.lifetime) {
-                const alpha = clone.lifetime / 180;
+                const alpha = clone.lifetime / 3.0; // 180 frames / 60
                 ctx.save();
                 ctx.globalAlpha = alpha * 0.7;
                 ctx.fillStyle = '#ff1493';

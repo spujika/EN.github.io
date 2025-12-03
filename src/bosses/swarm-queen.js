@@ -1,15 +1,18 @@
-﻿
-// 4. SWARM QUEEN - Summoner
+﻿// 4. SWARM QUEEN - Summoner
 class SwarmQueen extends Boss {
     constructor(x, y, canvas) {
         super(x, y, canvas);
         this.name = 'Swarm Queen';
         this.color = '#9b870c';
         this.size = 32;
-        this.speed = 1.3;
-        this.maxHealth = 170;
+        this.speed = 66; // 1.1 * 60
+        this.maxHealth = 150;
         this.health = this.maxHealth;
         this.targetDistance = 250;
+
+        // Ability Pool
+        this.abilityPool = ['spawnDrones', 'stickyFloor', 'eggSacs', 'webTrap', 'eliteGuard'];
+        this.startingAbility = 'spawnDrones';
 
         this.minions = [];
         this.webs = [];
@@ -19,25 +22,31 @@ class SwarmQueen extends Boss {
         this.stickyFloors = [];
         this.eggSacCooldown = 0;
         this.stickyFloorCooldown = 0;
+        this.minionSpawnCooldown = 0;
     }
 
-    update(player, projectiles, level, particles) {
-        super.update(player, projectiles, level, particles);
+    update(player, projectiles, level, particles, dt) {
+        super.update(player, projectiles, level, particles, dt);
 
         // Minion Management & Spawning (Restored)
         this.minions = this.minions.filter(m => m.health > 0);
-        const maxMinions = 1 + this.projectileCount;
-
-        // Spawn normal drones
-        if (this.minions.length < maxMinions && Math.random() < 0.01) {
-            this.minions.push({
-                x: this.x + (Math.random() - 0.5) * 50,
-                y: this.y + (Math.random() - 0.5) * 50,
-                health: 20,
-                size: 10,
-                speed: 1.5,
-                shootCooldown: 90
-            });
+        // Ability 1: Spawn Drones
+        if (this.unlockedAbilities.includes('spawnDrones')) {
+            if (this.minionSpawnCooldown <= 0) {
+                const spawnCount = 1 + this.projectileCount;
+                for (let i = 0; i < spawnCount; i++) {
+                    this.minions.push({
+                        x: this.x + (Math.random() - 0.5) * 50,
+                        y: this.y + (Math.random() - 0.5) * 50,
+                        health: 20,
+                        size: 10,
+                        speed: 90, // 1.5 * 60
+                        shootCooldown: 1.5 // 90 frames / 60
+                    });
+                }
+                this.minionSpawnCooldown = 4.0; // 240 frames / 60
+            }
+            if (this.minionSpawnCooldown > 0) this.minionSpawnCooldown -= dt;
         }
 
         // Update all minions (Normal + Elite)
@@ -46,39 +55,39 @@ class SwarmQueen extends Boss {
             const dy = player.y - minion.y;
             const angle = Math.atan2(dy, dx);
 
-            minion.x += Math.cos(angle) * minion.speed;
-            minion.y += Math.sin(angle) * minion.speed;
+            minion.x += Math.cos(angle) * minion.speed * dt;
+            minion.y += Math.sin(angle) * minion.speed * dt;
 
-            minion.shootCooldown--;
+            minion.shootCooldown -= dt;
             if (minion.shootCooldown <= 0) {
-                const speed = 2.0 * this.projectileSpeedMultiplier;
+                const speed = 120 * this.projectileSpeedMultiplier; // 2.0 * 60
                 projectiles.push(new Projectile(
                     minion.x, minion.y,
                     Math.cos(angle) * speed, Math.sin(angle) * speed,
                     8 * this.damageMultiplier, 'boss', '#ffd700', 4
                 ));
-                minion.shootCooldown = 400;
+                minion.shootCooldown = 6.66; // 400 frames / 60
             }
         });
 
-        // Phase 2+: Sticky Floor
-        if (this.phase >= 2) {
+        // Ability 2: Sticky Floor
+        if (this.unlockedAbilities.includes('stickyFloor')) {
             // Spawn sticky floor
             if (this.stickyFloorCooldown <= 0 && Math.random() < 0.01) {
                 this.stickyFloors.push({
                     x: player.x,
                     y: player.y,
                     radius: 60,
-                    lifetime: 300, // 5 seconds
+                    lifetime: 5.0, // 300 frames / 60
                     age: 0
                 });
-                this.stickyFloorCooldown = 240;
+                this.stickyFloorCooldown = 4.0; // 240 frames / 60
             }
-            if (this.stickyFloorCooldown > 0) this.stickyFloorCooldown--;
+            if (this.stickyFloorCooldown > 0) this.stickyFloorCooldown -= dt;
 
             // Update sticky floors
             this.stickyFloors = this.stickyFloors.filter(floor => {
-                floor.age++;
+                floor.age += dt;
 
                 // Check collision with player
                 const dx = player.x - floor.x;
@@ -92,8 +101,8 @@ class SwarmQueen extends Boss {
             });
         }
 
-        // Phase 2+: Egg Sacs
-        if (this.phase >= 2) {
+        // Ability 3: Egg Sacs
+        if (this.unlockedAbilities.includes('eggSacs')) {
             if (this.eggSacCooldown <= 0 && this.eggSacs.length < 3 && Math.random() < 0.005) {
                 this.eggSacs.push({
                     x: this.x + (Math.random() - 0.5) * 150,
@@ -101,17 +110,17 @@ class SwarmQueen extends Boss {
                     health: 1,
                     maxHealth: 1,
                     size: 15,
-                    hatchTimer: 300, // 5 seconds to destroy
-                    maxHatchTimer: 300
+                    hatchTimer: 5.0, // 300 frames / 60
+                    maxHatchTimer: 5.0
                 });
-                this.eggSacCooldown = 300;
+                this.eggSacCooldown = 5.0; // 300 frames / 60
             }
-            if (this.eggSacCooldown > 0) this.eggSacCooldown--;
+            if (this.eggSacCooldown > 0) this.eggSacCooldown -= dt;
 
             // Update Egg Sacs
             for (let i = this.eggSacs.length - 1; i >= 0; i--) {
                 const sac = this.eggSacs[i];
-                sac.hatchTimer--;
+                sac.hatchTimer -= dt;
 
                 if (sac.hatchTimer <= 0) {
                     // Hatch into Elite Minion
@@ -120,8 +129,8 @@ class SwarmQueen extends Boss {
                         y: sac.y,
                         health: 40, // Stronger
                         size: 14,
-                        speed: 2.0, // Faster
-                        shootCooldown: 60,
+                        speed: 120, // 2.0 * 60
+                        shootCooldown: 1.0, // 60 frames / 60
                         isElite: true
                     });
                     this.eggSacs.splice(i, 1);

@@ -215,7 +215,7 @@ class UIManager {
         this.showScreen('modifier');
     }
 
-    showExtraction(reward, onExtract, onContinue) {
+    showExtraction(reward, onExtract, onContinue, currentLevel) {
         this.rewardCoins.textContent = `💰 ${reward.coins}`;
         this.rewardItems.innerHTML = '';
 
@@ -238,6 +238,26 @@ class UIManager {
 
             this.rewardItems.appendChild(itemEl);
         });
+
+        // Update Level Info
+        const nextLevel = currentLevel + 1;
+        const nextLevelDisplay = document.getElementById('nextLevelDisplay');
+        const mechanicWarning = document.getElementById('mechanicWarning');
+
+        if (nextLevelDisplay) {
+            nextLevelDisplay.textContent = `Next Level: ${nextLevel}`;
+        }
+
+        if (mechanicWarning) {
+            // Warn if next level unlocks a new ability (every 5 levels)
+            // Level 5, 10, 15, 20...
+            if (nextLevel % 5 === 0) {
+                mechanicWarning.style.display = 'block';
+                mechanicWarning.textContent = "The nightmare stirs and gains new knowledge...";
+            } else {
+                mechanicWarning.style.display = 'none';
+            }
+        }
 
         // Setup buttons
         const extractBtn = document.getElementById('extractBtn');

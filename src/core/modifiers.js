@@ -28,7 +28,7 @@ const MODIFIER_TYPES = {
         icon: '🔥',
         description: 'Boss attacks more frequently',
         getValue: (level) => 0.25 + (Math.floor(level / 5) * 0.05), // +25% base, +5% per tier
-        getCurrentValue: (boss) => `Cooldown: ${(boss.attackCooldownMax / 60).toFixed(1)}s`,
+        getCurrentValue: (boss) => `Cooldown: ${boss.attackCooldownMax.toFixed(1)}s`,
         apply: (boss, value) => {
             boss.attackCooldownMax *= (1 - value); // Lower cooldown = faster attacks
         },

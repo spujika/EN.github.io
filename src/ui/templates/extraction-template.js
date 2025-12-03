@@ -9,6 +9,11 @@ function createExtractionTemplate() {
         <div class="modal-content extraction-content">
             <h2 class="modal-title">Choose Your Fate</h2>
             <p class="modal-subtitle">Wake with your rewards, or dream deeper for greater treasures?</p>
+            
+            <div class="level-info" style="text-align: center; margin-bottom: 20px;">
+                <h3 id="nextLevelDisplay" style="color: #ff00ff; text-shadow: 0 0 10px #ff00ff;">Next Level: 2</h3>
+                <p id="mechanicWarning" style="color: #ff4500; font-style: italic; display: none;">The nightmare stirs and gains new knowledge...</p>
+            </div>
 
             <div id="currentRewardDisplay" class="reward-display">
                 <h3>Current Rewards</h3>

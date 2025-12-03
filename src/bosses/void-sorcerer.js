@@ -5,10 +5,14 @@ class VoidSorcerer extends Boss {
         this.name = 'Void Sorcerer';
         this.color = '#8a2be2';
         this.size = 28;
-        this.speed = 1.1;
-        this.maxHealth = 120;
+        this.speed = 60; // 1.0 * 60
+        this.maxHealth = 100;
         this.health = this.maxHealth;
         this.targetDistance = 300; // Prefers long range
+
+        // Ability Pool
+        this.abilityPool = ['darkBolt', 'voidOrbs', 'gravityWell', 'voidRift', 'darkStar'];
+        this.startingAbility = 'voidOrbs';
 
         this.orbs = [];
         this.gravityWells = [];
@@ -34,8 +38,8 @@ class VoidSorcerer extends Boss {
         return super.takeDamage(amount, particles);
     }
 
-    update(player, projectiles, level, particles) {
-        super.update(player, projectiles, level, particles);
+    update(player, projectiles, level, particles, dt) {
+        super.update(player, projectiles, level, particles, dt);
 
         // Black Hole Logic (Phase 2+)
         if (this.blackHoleActive) {
@@ -58,16 +62,16 @@ class VoidSorcerer extends Boss {
                 }
             }
 
-            this.blackHoleDuration--;
+            this.blackHoleDuration -= dt;
             if (this.blackHoleDuration <= 0) {
                 this.blackHoleActive = false;
                 this.aiState = 'chase'; // Resume movement
             }
-        } else if (this.phase >= 2 && this.blackHoleCooldown <= 0 && Math.random() < 0.005) {
+        } else if (level >= 5 && this.phase >= 2 && this.blackHoleCooldown <= 0 && Math.random() < 0.005) {
             // Activate Black Hole
             this.blackHoleActive = true;
-            this.blackHoleDuration = 300; // 5 seconds
-            this.blackHoleCooldown = 600; // 10 seconds cooldown
+            this.blackHoleDuration = 5.0; // 300 frames / 60
+            this.blackHoleCooldown = 10.0; // 600 frames / 60
 
             // Teleport to center
             this.x = this.canvas.width / 2;
@@ -76,10 +80,10 @@ class VoidSorcerer extends Boss {
 
             console.log("Void Sorcerer: Black Hole Active!");
         }
-        if (this.blackHoleCooldown > 0) this.blackHoleCooldown--;
+        if (this.blackHoleCooldown > 0) this.blackHoleCooldown -= dt;
 
-        // Bullet Hell Logic (Phase 3)
-        if (this.phase === 3) {
+        // Bullet Hell Logic (Phase 3) (Level 5+)
+        if (level >= 5 && this.phase === 3) {
             // Rotate bullet hell pattern
             if (this.bulletHellActive) {
                 this.bulletHellAngle += 0.05;
@@ -88,7 +92,7 @@ class VoidSorcerer extends Boss {
                 if (Date.now() % 10 === 0) { // Every few frames
                     for (let i = 0; i < 4; i++) {
                         const angle = this.bulletHellAngle + (i * Math.PI / 2);
-                        const speed = 4 * this.projectileSpeedMultiplier;
+                        const speed = 240 * this.projectileSpeedMultiplier; // 4 * 60
                         projectiles.push(new Projectile(
                             this.x, this.y,
                             Math.cos(angle) * speed, Math.sin(angle) * speed,
@@ -97,30 +101,30 @@ class VoidSorcerer extends Boss {
                     }
                 }
 
-                this.bulletHellDuration--;
+                this.bulletHellDuration -= dt;
                 if (this.bulletHellDuration <= 0) {
                     this.bulletHellActive = false;
                 }
             } else if (Math.random() < 0.01) {
                 this.bulletHellActive = true;
-                this.bulletHellDuration = 180; // 3 seconds
+                this.bulletHellDuration = 3.0; // 180 frames / 60
             }
         }
     }
 
-    updateAI(player, distance) {
+    updateAI(player, distance, dt) {
         if (this.blackHoleActive) return; // Don't move
-        super.updateAI(player, distance);
+        super.updateAI(player, distance, dt);
     }
 
-    handleAttacks(player, projectiles, level, particles) {
-        // Level 1: Dark Bolt
-        if (level >= 1 && this.attackCooldown === 0 && !this.blackHoleActive) {
+    handleAttacks(player, projectiles, level, particles, dt) {
+        // Ability 1: Dark Bolt
+        if (this.unlockedAbilities.includes('darkBolt') && this.attackCooldown === 0 && !this.blackHoleActive) {
             const count = 1 + this.projectileCount;
             for (let i = 0; i < count; i++) {
                 const spread = (i - (count - 1) / 2) * 0.2;
                 projectiles.push(new HomingProjectile(
-                    this.x, this.y, 3.0 * this.projectileSpeedMultiplier,
+                    this.x, this.y, 180 * this.projectileSpeedMultiplier, // 3.0 * 60
                     6 * this.damageMultiplier, 'boss', player, '#8a2be2'
                 ));
                 // Homing projectiles adjust their own angle, but we could offset start position slightly
@@ -130,8 +134,8 @@ class VoidSorcerer extends Boss {
             this.attackCooldown = this.attackCooldownMax;
         }
 
-        // Level 5: Void Orbs
-        if (level >= 5) {
+        // Ability 2: Void Orbs
+        if (this.unlockedAbilities.includes('voidOrbs')) {
             // Maintain orbiting orbs
             this.orbs = this.orbs.filter(orb => orb.active);
             const maxOrbs = 3 + this.projectileCount;
@@ -139,14 +143,14 @@ class VoidSorcerer extends Boss {
                 this.orbs.push({
                     angle: Math.random() * Math.PI * 2,
                     distance: this.size + 40,
-                    shootCooldown: 60,
+                    shootCooldown: 1.0, // 60 frames / 60
                     active: true
                 });
             }
 
             this.orbs.forEach(orb => {
-                orb.angle += 0.05;
-                orb.shootCooldown--;
+                orb.angle += 0.05 * dt;
+                orb.shootCooldown -= dt;
 
                 if (orb.shootCooldown <= 0) {
                     const orbX = this.x + Math.cos(orb.angle) * orb.distance;
@@ -159,47 +163,47 @@ class VoidSorcerer extends Boss {
                         Math.cos(angle) * speed, Math.sin(angle) * speed,
                         10 * this.damageMultiplier, 'boss', '#9370db', 5
                     ));
-                    orb.shootCooldown = 90;
+                    orb.shootCooldown = 1.5; // 90 frames / 60
                 }
             });
         }
 
-        // Level 10: Gravity Well (Reduced frequency if Black Hole is active)
-        if (level >= 10 && Math.random() < 0.008 && !this.blackHoleActive) {
+        // Ability 3: Gravity Well
+        if (this.unlockedAbilities.includes('gravityWell') && Math.random() < 0.008 && !this.blackHoleActive) {
             this.gravityWells.push({
                 x: player.x,
                 y: player.y,
                 radius: 80,
                 strength: 0.5,
-                lifetime: 180,
+                lifetime: 3.0, // 180 frames / 60
                 age: 0
             });
         }
 
         this.gravityWells = this.gravityWells.filter(well => {
-            well.age++;
+            well.age += dt;
             return well.age < well.lifetime;
         });
 
-        // Level 15: Void Rift
-        if (level >= 15 && Math.random() < 0.005 && !this.blackHoleActive) {
+        // Ability 4: Void Rift
+        if (this.unlockedAbilities.includes('voidRift') && Math.random() < 0.005 && !this.blackHoleActive) {
             const angle = Math.random() * Math.PI * 2;
             this.voidRifts.push({
                 x: this.canvas.width / 2 + Math.cos(angle) * 200,
                 y: this.canvas.height / 2 + Math.sin(angle) * 200,
                 angle: angle,
-                lifetime: 120,
+                lifetime: 2.0, // 120 frames / 60
                 age: 0,
                 shootTimer: 0
             });
         }
 
         this.voidRifts = this.voidRifts.filter(rift => {
-            rift.age++;
-            rift.shootTimer++;
+            rift.age += dt;
+            rift.shootTimer += dt;
 
-            if (rift.shootTimer > 10) {
-                const speed = 5.0 * this.projectileSpeedMultiplier;
+            if (rift.shootTimer > 0.16) { // 10 frames / 60
+                const speed = 300 * this.projectileSpeedMultiplier; // 5.0 * 60
                 const count = 1 + this.projectileCount;
                 for (let i = 0; i < count; i++) {
                     const spread = (i - (count - 1) / 2) * 0.3;
@@ -215,16 +219,16 @@ class VoidSorcerer extends Boss {
             return rift.age < rift.lifetime;
         });
 
-        // Level 20: Dark Star
-        if (level >= 20 && !this.blackHoleActive) {
+        // Ability 5: Dark Star
+        if (this.unlockedAbilities.includes('darkStar') && !this.blackHoleActive) {
             if (!this.darkStarCharging && Math.random() < 0.002) {
                 this.darkStarCharging = true;
                 this.darkStarCharge = 0;
             }
 
             if (this.darkStarCharging) {
-                this.darkStarCharge++;
-                if (this.darkStarCharge >= 120) {
+                this.darkStarCharge += dt;
+                if (this.darkStarCharge >= 2.0) { // 120 frames / 60
                     // Create massive explosion
                     projectiles.push(new ExplodingProjectile(
                         this.x, this.y, 0, 0,
@@ -342,7 +346,7 @@ class VoidSorcerer extends Boss {
 
         // Draw dark star charging
         if (this.darkStarCharging) {
-            const progress = this.darkStarCharge / 120;
+            const progress = this.darkStarCharge / 2.0; // 120 frames / 60
             ctx.save();
             ctx.fillStyle = '#8a2be2';
             ctx.shadowBlur = 40 * progress;

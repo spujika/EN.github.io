@@ -5,14 +5,14 @@ class CrimsonReaper extends Boss {
         this.name = 'Crimson Reaper';
         this.color = '#dc143c';
         this.size = 25;
-        this.speed = 3.2;
+        this.speed = 168; // 2.8 * 60
         this.contactDamage = 3;
-        this.maxHealth = 120; // Doubled from 60
+        this.maxHealth = 100; // Reduced from 120
         this.health = this.maxHealth;
         this.targetDistance = 50; // Prefers close range
 
         this.dashCooldown = 0;
-        this.dashSpeed = 3;
+        this.dashSpeed = 180; // 3 * 60
         this.isDashing = false;
         this.dashDuration = 0;
         this.dashAngle = 0;
@@ -29,22 +29,26 @@ class CrimsonReaper extends Boss {
         this.isExecuting = false;
         this.executionCharge = 0;
         this.executionAngle = 0;
+
+        // Ability Pool
+        this.abilityPool = ['dashStrike', 'bloodSlash', 'shadowStep', 'crimsonTornado', 'reapersDance'];
+        this.startingAbility = 'bloodSlash';
     }
 
-    updateAI(player, distance) {
+    updateAI(player, distance, dt) {
         // Stand still during execution charge
         if (this.isExecuting) {
             return;
         }
-        super.updateAI(player, distance);
+        super.updateAI(player, distance, dt);
     }
 
-    update(player, projectiles, level, particles) {
-        super.update(player, projectiles, level, particles);
+    update(player, projectiles, level, particles, dt) {
+        super.update(player, projectiles, level, particles, dt);
 
         // Phase 3: Blood Frenzy
         if (this.phase === 3) {
-            this.speed = 4.5; // Faster
+            this.speed = 270; // 4.5 * 60
             this.damageMultiplier = 1.5; // More damage
             // But takes more damage (handled in takeDamage)
 
@@ -79,46 +83,46 @@ class CrimsonReaper extends Boss {
         return super.takeDamage(amount, particles);
     }
 
-    handleAttacks(player, projectiles, level, particles) {
-        // Phase 2+: Parry Stance
-        if (this.phase >= 2 && this.parryCooldown === 0 && !this.isExecuting && !this.isDashing) {
+    handleAttacks(player, projectiles, level, particles, dt) {
+        // Phase 2+: Parry Stance (Level 5+)
+        if (level >= 5 && this.phase >= 2 && this.parryCooldown === 0 && !this.isExecuting && !this.isDashing) {
             if (Math.random() < 0.005) {
                 this.parryActive = true;
-                this.parryDuration = 120; // 2 seconds
-                this.parryCooldown = 300; // 5 seconds cooldown
+                this.parryDuration = 2.0; // 120 frames / 60
+                this.parryCooldown = 5.0; // 300 frames / 60
                 this.color = '#ffffff'; // Visual indicator
             }
         }
 
         if (this.parryActive) {
-            this.parryDuration--;
+            this.parryDuration -= dt;
             if (this.parryDuration <= 0) {
                 this.parryActive = false;
                 this.color = '#dc143c'; // Reset color
             }
             return; // No other attacks while parrying
         }
-        if (this.parryCooldown > 0) this.parryCooldown--;
+        if (this.parryCooldown > 0) this.parryCooldown -= dt;
 
-        // Phase 2+: Execution (Cone Attack)
-        if (this.phase >= 2 && this.executionCooldown === 0 && !this.isDashing) {
+        // Phase 2+: Execution (Cone Attack) (Level 5+)
+        if (level >= 5 && this.phase >= 2 && this.executionCooldown === 0 && !this.isDashing) {
             if (Math.random() < 0.008) {
                 this.isExecuting = true;
-                this.executionCharge = 60; // 1 second windup
+                this.executionCharge = 1.0; // 60 frames / 60
                 this.executionAngle = Math.atan2(player.y - this.y, player.x - this.x);
-                this.executionCooldown = 400;
+                this.executionCooldown = 6.66; // 400 frames / 60
             }
         }
 
         if (this.isExecuting) {
-            this.executionCharge--;
+            this.executionCharge -= dt;
             if (this.executionCharge <= 0) {
                 // FIRE!
                 const coneAngle = Math.PI / 3; // 60 degrees
                 const count = 10;
                 for (let i = 0; i < count; i++) {
                     const a = this.executionAngle - coneAngle / 2 + (i / count) * coneAngle;
-                    const speed = 6 * this.projectileSpeedMultiplier;
+                    const speed = 360 * this.projectileSpeedMultiplier; // 6 * 60
                     projectiles.push(new Projectile(
                         this.x, this.y,
                         Math.cos(a) * speed, Math.sin(a) * speed,
@@ -129,40 +133,40 @@ class CrimsonReaper extends Boss {
             }
             return; // Don't move while charging
         }
-        if (this.executionCooldown > 0) this.executionCooldown--;
+        if (this.executionCooldown > 0) this.executionCooldown -= dt;
 
 
-        // Level 1: Dash Strike
-        if (level >= 1 && this.dashCooldown === 0 && !this.isDashing) {
+        // Ability 1: Dash Strike
+        if (this.unlockedAbilities.includes('dashStrike') && this.dashCooldown === 0 && !this.isDashing) {
             const dx = player.x - this.x;
             const dy = player.y - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
 
             if (distance < 300 && distance > 50) {
                 this.isDashing = true;
-                this.dashDuration = 15;
+                this.dashDuration = 0.25; // 15 frames / 60
                 this.dashAngle = Math.atan2(dy, dx);
-                this.dashCooldown = 120;
+                this.dashCooldown = 2.0; // 120 frames / 60
             }
         }
 
         if (this.isDashing) {
-            this.x += Math.cos(this.dashAngle) * this.dashSpeed;
-            this.y += Math.sin(this.dashAngle) * this.dashSpeed;
-            this.dashDuration--;
+            this.x += Math.cos(this.dashAngle) * this.dashSpeed * dt;
+            this.y += Math.sin(this.dashAngle) * this.dashSpeed * dt;
+            this.dashDuration -= dt;
             if (this.dashDuration <= 0) {
                 this.isDashing = false;
             }
         }
 
-        if (this.dashCooldown > 0) this.dashCooldown--;
+        if (this.dashCooldown > 0) this.dashCooldown -= dt;
 
-        // Level 5: Blood Slash
-        if (level >= 5 && this.attackCooldown === 0) {
+        // Ability 2: Blood Slash
+        if (this.unlockedAbilities.includes('bloodSlash') && this.attackCooldown === 0) {
             const count = 2 + this.projectileCount;
             for (let i = -count; i <= count; i++) {
                 const angle = this.angle + (i * Math.PI / 8);
-                const speed = 5.0 * this.projectileSpeedMultiplier;
+                const speed = 300 * this.projectileSpeedMultiplier; // 5.0 * 60
                 const vx = Math.cos(angle) * speed;
                 const vy = Math.sin(angle) * speed;
                 projectiles.push(new Projectile(
@@ -173,8 +177,8 @@ class CrimsonReaper extends Boss {
             this.attackCooldown = this.attackCooldownMax;
         }
 
-        // Level 10: Shadow Step (teleport)
-        if (level >= 10 && this.teleportCooldown === 0) {
+        // Ability 3: Shadow Step
+        if (this.unlockedAbilities.includes('shadowStep') && this.teleportCooldown === 0) {
             // Teleport behind player
             const dist = 80;
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
@@ -188,12 +192,12 @@ class CrimsonReaper extends Boss {
                 }
             }
 
-            this.teleportCooldown = 300;
+            this.teleportCooldown = 5.0; // 300 frames / 60
         }
-        if (this.teleportCooldown > 0) this.teleportCooldown--;
+        if (this.teleportCooldown > 0) this.teleportCooldown -= dt;
 
-        // Level 15: Crimson Tornado
-        if (level >= 15 && this.spinDuration > 0) {
+        // Ability 4: Crimson Tornado
+        if (this.unlockedAbilities.includes('crimsonTornado') && this.spinDuration > 0) {
             // Create damage zone while spinning
             const angle = (Date.now() / 50) % (Math.PI * 2);
             const count = 8 + (this.projectileCount * 2);
@@ -207,16 +211,16 @@ class CrimsonReaper extends Boss {
                     8 * this.damageMultiplier, 'boss', '#dc143c', 4
                 ));
             }
-            this.spinDuration--;
-        } else if (level >= 15 && this.attackCooldown === 0 && Math.random() < 0.3) {
-            this.spinDuration = 60;
+            this.spinDuration -= dt;
+        } else if (this.unlockedAbilities.includes('crimsonTornado') && this.attackCooldown === 0 && Math.random() < 0.3) {
+            this.spinDuration = 1.0; // 60 frames / 60
             this.attackCooldown = this.attackCooldownMax * 2;
         }
 
-        // Level 20: Reaper's Dance (chain dashes)
-        if (level >= 20 && !this.isDashing && Math.random() < 0.01) {
+        // Ability 5: Reaper's Dance
+        if (this.unlockedAbilities.includes('reapersDance') && !this.isDashing && Math.random() < 0.01) {
             // This is handled by multiple dash attacks
-            this.dashCooldown = Math.max(0, this.dashCooldown - 60);
+            this.dashCooldown = Math.max(0, this.dashCooldown - 1.0); // 60 frames / 60
         }
     }
 
@@ -249,7 +253,7 @@ class CrimsonReaper extends Boss {
             // Progress indicator
             ctx.strokeStyle = '#ff0000';
             ctx.lineWidth = 2;
-            const progress = 1 - (this.executionCharge / 60);
+            const progress = 1 - (this.executionCharge / 1.0);
             ctx.beginPath();
             ctx.arc(this.x, this.y, 200 * progress, this.executionAngle - Math.PI / 6, this.executionAngle + Math.PI / 6);
             ctx.stroke();

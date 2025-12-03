@@ -4,15 +4,15 @@ class Player {
         this.x = x;
         this.y = y;
         this.size = 15;
-        this.speed = 4;
+        this.speed = 240; // 4 * 60
         this.maxHealth = 100;
         this.health = this.maxHealth;
         this.angle = 0;
 
         // Shooting
-        this.fireRate = 10; // frames between shots
+        this.fireRate = 0.16; // 10 frames / 60
         this.fireCooldown = 0;
-        this.bulletSpeed = 8;
+        this.bulletSpeed = 480; // 8 * 60
         this.bulletDamage = 10;
 
         // Movement
@@ -24,7 +24,7 @@ class Player {
         // Invulnerability frames after hit
         this.invulnerable = false;
         this.invulnerabilityTime = 0;
-        this.maxInvulnerabilityTime = 60;
+        this.maxInvulnerabilityTime = 1.0; // 60 frames / 60
 
         // Debug
         this.debugInvincible = false;
@@ -35,12 +35,12 @@ class Player {
         this.baseStats = {
             damage: 20,
             defense: 0,
-            speed: 4,
+            speed: 240, // 4 * 60
             maxHealth: 25,
-            fireRate: 30,
+            fireRate: 0.5, // 30 frames / 60
             crit: 0,
             dashDistance: 100,
-            dashSpeed: 15
+            dashSpeed: 900 // 15 * 60
         };
 
         // Current Stats (Derived)
@@ -56,10 +56,10 @@ class Player {
         this.maxDashCharges = 1;  // Can be increased later
         this.dashCharges = this.maxDashCharges;
         this.dashRechargeTimer = 0;
-        this.dashRechargeDuration = 60; // 1 second at 60fps per charge
+        this.dashRechargeDuration = 1.0; // 60 frames / 60
         this.dashDirection = { x: 0, y: 0 };
         this.dashTimer = 0;
-        this.dashDuration = 10; // frames
+        this.dashDuration = 0.16; // 10 frames / 60
         this.lastMoveDir = { x: 0, y: 0 };
 
         this.inventory = null;
@@ -88,8 +88,8 @@ class Player {
     }
 
     update(mouseX, mouseY, isMouseDown, projectiles, deltaTime = 16.67) {
-        // Target 60 FPS (16.67ms per frame) as baseline
-        const deltaMult = deltaTime / 16.67;
+        // Use passed dt (seconds) or calculate from ms
+        const dt = deltaTime < 1 ? deltaTime : deltaTime / 1000;
 
         // Calculate angle to mouse
         this.angle = Math.atan2(mouseY - this.y, mouseX - this.x);
@@ -120,7 +120,7 @@ class Player {
 
         // Handle dash recharge
         if (this.dashCharges < this.maxDashCharges) {
-            this.dashRechargeTimer += deltaMult;
+            this.dashRechargeTimer += dt;
             if (this.dashRechargeTimer >= this.dashRechargeDuration) {
                 this.dashCharges++;
                 this.dashRechargeTimer = 0;
@@ -129,17 +129,17 @@ class Player {
 
         if (this.isDashing) {
             // Continue dash - ignores movement flags
-            this.x += this.dashDirection.x * this.baseStats.dashSpeed * deltaMult;
-            this.y += this.dashDirection.y * this.baseStats.dashSpeed * deltaMult;
-            this.dashTimer -= deltaMult;
+            this.x += this.dashDirection.x * this.baseStats.dashSpeed * dt;
+            this.y += this.dashDirection.y * this.baseStats.dashSpeed * dt;
+            this.dashTimer -= dt;
 
             if (this.dashTimer <= 0) {
                 this.isDashing = false;
             }
         } else {
             // Normal movement - uses movement flags
-            this.x += dx * currentSpeed * deltaMult;
-            this.y += dy * currentSpeed * deltaMult;
+            this.x += dx * currentSpeed * dt;
+            this.y += dy * currentSpeed * dt;
         }
 
         // Keep player in bounds
@@ -148,7 +148,7 @@ class Player {
 
         // Shooting with delta time
         if (this.fireCooldown > 0) {
-            this.fireCooldown -= deltaMult;
+            this.fireCooldown -= dt;
         }
 
         if (isMouseDown && this.fireCooldown <= 0) {
@@ -158,7 +158,7 @@ class Player {
 
         // Update invulnerability with delta time
         if (this.invulnerable) {
-            this.invulnerabilityTime += deltaMult;
+            this.invulnerabilityTime += dt;
             if (this.invulnerabilityTime >= this.maxInvulnerabilityTime) {
                 this.invulnerable = false;
                 this.invulnerabilityTime = 0;
@@ -225,7 +225,7 @@ class Player {
         ctx.save();
 
         // Flash when invulnerable
-        if (this.invulnerable && Math.floor(this.invulnerabilityTime / 5) % 2 === 0) {
+        if (this.invulnerable && Math.floor(this.invulnerabilityTime * 10) % 2 === 0) {
             ctx.globalAlpha = 0.5;
         }
 

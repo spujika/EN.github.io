@@ -11,16 +11,16 @@ class Projectile {
         this.size = size;
         this.active = true;
         this.lifetime = 0;
-        this.maxLifetime = 180; // 3 seconds at 60fps
+        this.maxLifetime = 3.0; // 180 frames / 60
     }
 
-    update(canvas) {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.lifetime++;
+    update(canvas, dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.lifetime += dt;
 
         // Remove if out of bounds or too old
-        if (this.x < 0 || this.x > canvas.width || 
+        if (this.x < 0 || this.x > canvas.width ||
             this.y < 0 || this.y > canvas.height ||
             this.lifetime > this.maxLifetime) {
             this.active = false;
@@ -52,18 +52,18 @@ class HomingProjectile extends Projectile {
         super(x, y, 0, 0, damage, owner, color, 6);
         this.speed = speed;
         this.target = target;
-        this.turnRate = 0.05;
+        this.turnRate = 0.05 * 60; // 3 radians/sec
     }
 
-    update(canvas) {
+    update(canvas, dt) {
         // Calculate direction to target
         const dx = this.target.x - this.x;
         const dy = this.target.y - this.y;
         const angle = Math.atan2(dy, dx);
 
         // Update velocity to home towards target
-        this.vx += Math.cos(angle) * this.turnRate;
-        this.vy += Math.sin(angle) * this.turnRate;
+        this.vx += Math.cos(angle) * this.turnRate * dt;
+        this.vy += Math.sin(angle) * this.turnRate * dt;
 
         // Normalize and apply speed
         const mag = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
@@ -72,7 +72,7 @@ class HomingProjectile extends Projectile {
             this.vy = (this.vy / mag) * this.speed;
         }
 
-        super.update(canvas);
+        super.update(canvas, dt);
     }
 
     draw(ctx) {
@@ -80,7 +80,7 @@ class HomingProjectile extends Projectile {
         ctx.save();
         ctx.shadowBlur = 20;
         ctx.shadowColor = this.color;
-        
+
         // Trail
         ctx.strokeStyle = this.color;
         ctx.lineWidth = 3;
@@ -89,7 +89,7 @@ class HomingProjectile extends Projectile {
         ctx.moveTo(this.x - this.vx * 2, this.y - this.vy * 2);
         ctx.lineTo(this.x, this.y);
         ctx.stroke();
-        
+
         // Main projectile
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.color;
@@ -107,10 +107,10 @@ class BouncingProjectile extends Projectile {
         this.maxBounces = 3;
     }
 
-    update(canvas) {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.lifetime++;
+    update(canvas, dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.lifetime += dt;
 
         // Bounce off walls
         if (this.x < this.size || this.x > canvas.width - this.size) {
@@ -136,7 +136,7 @@ class ExplodingProjectile extends Projectile {
         this.exploded = false;
         this.explosionRadius = 60;
         this.explosionTime = 0;
-        this.maxExplosionTime = 20;
+        this.maxExplosionTime = 0.35; // 20 frames / 60
     }
 
     explode() {
@@ -145,11 +145,11 @@ class ExplodingProjectile extends Projectile {
         this.vy = 0;
     }
 
-    update(canvas) {
+    update(canvas, dt) {
         if (!this.exploded) {
-            super.update(canvas);
+            super.update(canvas, dt);
         } else {
-            this.explosionTime++;
+            this.explosionTime += dt;
             if (this.explosionTime > this.maxExplosionTime) {
                 this.active = false;
             }
@@ -167,7 +167,7 @@ class ExplodingProjectile extends Projectile {
 
             ctx.save();
             ctx.globalAlpha = alpha;
-            
+
             // Outer ring
             ctx.strokeStyle = this.color;
             ctx.lineWidth = 5;
@@ -176,7 +176,7 @@ class ExplodingProjectile extends Projectile {
             ctx.beginPath();
             ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
             ctx.stroke();
-            
+
             // Inner glow
             ctx.fillStyle = this.color;
             ctx.globalAlpha = alpha * 0.3;
@@ -189,7 +189,7 @@ class ExplodingProjectile extends Projectile {
 
     checkExplosionCollision(entity) {
         if (!this.exploded) return false;
-        
+
         const dx = this.x - entity.x;
         const dy = this.y - entity.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -203,20 +203,20 @@ class Particle {
         this.x = x;
         this.y = y;
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 3 + 1;
+        const speed = (Math.random() * 3 + 1) * 60; // Scale speed
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
         this.color = color;
         this.size = size;
         this.life = 1;
-        this.decay = Math.random() * 0.02 + 0.01;
+        this.decay = (Math.random() * 0.02 + 0.01) * 60; // Scale decay
     }
 
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.vy += 0.1; // gravity
-        this.life -= this.decay;
+    update(dt) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.vy += 6.0 * dt; // gravity 0.1 * 60
+        this.life -= this.decay * dt;
     }
 
     draw(ctx) {
