@@ -13,7 +13,7 @@ class IronColossus extends Boss {
 
 
 
-        this.slamCooldown = 0;
+        this.slamCooldown = 0.5; // Staggered start
         this.isCharging = false;
         this.chargeAngle = 0;
         this.chargeSpeed = 300; // 5 * 60

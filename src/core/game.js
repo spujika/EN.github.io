@@ -30,8 +30,8 @@ class Game {
         this.survivalTime = 0;
         this.currentBossType = null; // Store boss type for the run
 
-        // Boss Selection
-        this.availableBosses = ['CrimsonReaper', 'VoidSorcerer', 'IronColossus', 'SwarmQueen', 'ChaosPhantom'];
+        // Boss Selection ['CrimsonReaper', 'VoidSorcerer', 'IronColossus', 'SwarmQueen', 'ChaosPhantom']
+        this.availableBosses = ['CrimsonReaper'];
 
         // Current Run Rewards
         this.currentReward = null;
@@ -62,6 +62,9 @@ class Game {
 
         // Show menu initially
         this.ui.showScreen('menu');
+
+        // Initialize boss icon visual states (must happen after window.game is set)
+        this.ui.refreshBossIconStates(this);
 
         // Initialize Debug UI
         if (window.initDebugUI) {
@@ -282,7 +285,25 @@ class Game {
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
                 if (dist < this.boss.size + proj.size) {
-                    // Hit!
+                    // Check if boss has reflect parry active
+                    if (this.boss.reflectParry && this.boss.reflectParry.isActive()) {
+                        // REFLECT THE PROJECTILE!
+                        this.boss.reflectParry.reflectProjectile(proj);
+
+                        // Create reflection particles
+                        for (let j = 0; j < 8; j++) {
+                            this.particles.push(new Particle(
+                                proj.x, proj.y,
+                                '#ffffff',
+                                4
+                            ));
+                        }
+
+                        console.log("Projectile Reflected!");
+                        continue; // Don't remove projectile, let it fly back
+                    }
+
+                    // Normal hit behavior
                     if (this.boss.takeDamage(proj.damage, this.particles)) {
                         this.bossDefeated();
                     }

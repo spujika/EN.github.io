@@ -18,9 +18,9 @@ class SwarmQueen extends Boss {
         // New Mechanics
         this.eggSacs = [];
         this.stickyFloors = [];
-        this.eggSacCooldown = 0;
-        this.stickyFloorCooldown = 0;
-        this.minionSpawnCooldown = 0;
+        this.eggSacCooldown = 1.5; // Staggered start
+        this.stickyFloorCooldown = 0.5; // Staggered start
+        this.minionSpawnCooldown = 1.0; // Staggered start
     }
 
     update(player, projectiles, level, particles, dt) {

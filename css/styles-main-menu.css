@@ -192,3 +192,15 @@
     opacity: 0.5;
     border-color: #666;
 }
+
+.version-number {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 2;
+    font-size: 0.9rem;
+    color: rgba(138, 43, 226, 0.7);
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 5px rgba(138, 43, 226, 0.3);
+    pointer-events: none;
+}

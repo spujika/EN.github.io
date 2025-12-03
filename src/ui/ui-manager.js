@@ -59,10 +59,16 @@ class UIManager {
     setupBossSelection() {
         const bossIcons = document.querySelectorAll('.boss-icon');
         bossIcons.forEach(icon => {
-            icon.addEventListener('click', () => {
-                const bossType = icon.dataset.bossType;
-                if (!bossType) return;
+            const bossType = icon.dataset.bossType;
+            if (!bossType) return;
 
+            // Initialize visual state based on game's availableBosses
+            if (window.game && !window.game.availableBosses.includes(bossType)) {
+                icon.classList.add('unselected');
+            }
+
+            // Add click handler
+            icon.addEventListener('click', () => {
                 // Toggle in game logic
                 // We need access to the game instance. Since UI is created inside Game, 
                 // we might need to pass it or access via window.game (which is set in game.js)
@@ -77,6 +83,21 @@ class UIManager {
                     }
                 }
             });
+        });
+    }
+
+    refreshBossIconStates(game = window.game) {
+        const bossIcons = document.querySelectorAll('.boss-icon');
+        bossIcons.forEach(icon => {
+            const bossType = icon.dataset.bossType;
+            if (!bossType) return;
+
+            // Update visual state based on game's availableBosses
+            if (game && !game.availableBosses.includes(bossType)) {
+                icon.classList.add('unselected');
+            } else {
+                icon.classList.remove('unselected');
+            }
         });
     }
 

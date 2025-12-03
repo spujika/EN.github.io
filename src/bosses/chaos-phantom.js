@@ -22,8 +22,8 @@ class ChaosPhantom extends Boss {
         this.realCloneActive = false;
         this.screenTearActive = false;
         this.screenTearDuration = 0;
-        this.cloneCooldown = 0;
-        this.screenTearCooldown = 0;
+        this.cloneCooldown = 1.0; // Staggered start
+        this.screenTearCooldown = 1.5; // Staggered start
         this.hasUsedClonePhase2 = false;
         this.hasUsedClonePhase3 = false;
     }

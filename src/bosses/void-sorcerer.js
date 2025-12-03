@@ -21,7 +21,7 @@ class VoidSorcerer extends Boss {
         // New Mechanics
         this.blackHoleActive = false;
         this.blackHoleDuration = 0;
-        this.blackHoleCooldown = 0;
+        this.blackHoleCooldown = 1.0; // Staggered start
         this.blackHoleRadius = 60;
 
         this.bulletHellActive = false;

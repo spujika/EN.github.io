@@ -1,6 +1,6 @@
 // Projectile System
 class Projectile {
-    constructor(x, y, vx, vy, damage, owner, color = '#ffff00', size = 4) {
+    constructor(x, y, vx, vy, damage, owner, color = '#ffff00', size = 4, maxLifetime = 3.0) {
         this.x = x;
         this.y = y;
         this.vx = vx;
@@ -11,7 +11,7 @@ class Projectile {
         this.size = size;
         this.active = true;
         this.lifetime = 0;
-        this.maxLifetime = 3.0; // 180 frames / 60
+        this.maxLifetime = maxLifetime; // Custom lifetime or default 3.0 seconds
     }
 
     update(canvas, dt) {
@@ -194,6 +194,116 @@ class ExplodingProjectile extends Projectile {
         const dy = this.y - entity.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         return distance < this.explosionRadius;
+    }
+}
+
+class BoomerangProjectile extends Projectile {
+    constructor(x, y, angle, speed, damage, owner, color = '#8b0000') {
+        super(x, y, 0, 0, damage, owner, color, 8);
+        this.originX = x;
+        this.originY = y;
+        this.angle = angle;
+        this.speed = speed;
+        this.maxLifetime = 3.0; // Total journey time
+        this.rotationAngle = 0;
+
+        // Arc parameters for boomerang trajectory
+        this.arcRadius = 200; // How far out the boomerang goes
+        this.arcSpeed = Math.PI / 1.5; // Speed of arc traversal (radians per second)
+    }
+
+    update(canvas, dt) {
+        this.lifetime += dt;
+
+        // Calculate position along the boomerang arc
+        // The boomerang travels in a circle around a point offset from the origin
+        const t = this.lifetime * this.arcSpeed;
+
+        // Create an arc that goes out and comes back
+        // At t=0, starts at origin
+        // At t=PI, reaches maximum distance
+        // At t=2*PI, returns to origin
+        const progress = Math.min(t, Math.PI * 2);
+
+        // Offset the center of the arc in the direction of the initial angle
+        const centerOffsetX = this.originX + Math.cos(this.angle) * this.arcRadius;
+        const centerOffsetY = this.originY + Math.sin(this.angle) * this.arcRadius;
+
+        // Calculate position on the circular arc
+        this.x = centerOffsetX + Math.cos(this.angle + Math.PI + progress) * this.arcRadius;
+        this.y = centerOffsetY + Math.sin(this.angle + Math.PI + progress) * this.arcRadius;
+
+        // Calculate velocity for drawing direction
+        const nextT = progress + 0.1;
+        const nextX = centerOffsetX + Math.cos(this.angle + Math.PI + nextT) * this.arcRadius;
+        const nextY = centerOffsetY + Math.sin(this.angle + Math.PI + nextT) * this.arcRadius;
+        this.vx = (nextX - this.x) * 10;
+        this.vy = (nextY - this.y) * 10;
+
+        // Update rotation for spinning effect
+        this.rotationAngle += 12 * dt; // Spin speed
+
+        // Deactivate if completed the full arc or too old
+        if (progress >= Math.PI * 2 || this.lifetime > this.maxLifetime) {
+            this.active = false;
+        }
+
+        // Out of bounds check (but allow some leeway for arc)
+        if (this.x < -100 || this.x > canvas.width + 100 ||
+            this.y < -100 || this.y > canvas.height + 100) {
+            this.active = false;
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+
+        // Draw blood trail
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.3;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        const trailLength = 20;
+        ctx.beginPath();
+        ctx.moveTo(
+            this.x - Math.cos(Math.atan2(this.vy, this.vx)) * trailLength,
+            this.y - Math.sin(Math.atan2(this.vy, this.vx)) * trailLength
+        );
+        ctx.lineTo(this.x, this.y);
+        ctx.stroke();
+
+        // Draw spinning scythe
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotationAngle);
+        ctx.globalAlpha = 1;
+
+        // Scythe blade (crescent shape)
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = this.color;
+
+        // Draw crescent moon shape for scythe
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Add blade extension
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(this.size * 2, -this.size / 2);
+        ctx.lineTo(this.size * 2, this.size / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Add glow effect
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
     }
 }
 
