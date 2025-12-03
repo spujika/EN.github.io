@@ -105,9 +105,7 @@ function createInventoryTemplate() {
                     <div class="extraction-pool" style="display: none;">
                         <div class="extraction-pool-header">
                             <h3>Extracted Rewards</h3>
-                            <div class="extraction-coins">
-                                💰 <span id="extractionCoinsDisplay">0</span>
-                            </div>
+
                             <p class="extraction-instructions">Click items to take them. Destroy inventory items to make
                                 space.</p>
                         </div>

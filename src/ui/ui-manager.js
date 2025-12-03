@@ -529,6 +529,19 @@ class UIManager {
         // Make extraction pool visible
         if (extractionPool) {
             extractionPool.style.display = 'flex';
+
+            // Add pulsing glow effect
+            extractionPool.classList.add('pulsing-glow');
+
+            // Remove glow on interaction
+            const removeGlow = () => {
+                extractionPool.classList.remove('pulsing-glow');
+                extractionPool.removeEventListener('mouseover', removeGlow);
+                extractionPool.removeEventListener('click', removeGlow);
+            };
+
+            extractionPool.addEventListener('mouseover', removeGlow);
+            extractionPool.addEventListener('click', removeGlow);
         }
 
         this.extractedItems = [...extractedItems];
@@ -551,6 +564,12 @@ class UIManager {
                     }
                 });
                 this.inventoryUI.render();
+
+                // Auto close after take all
+                setTimeout(() => {
+                    const doneBtn = document.getElementById('doneManagingBtn');
+                    if (doneBtn) doneBtn.click();
+                }, 500);
             };
         }
 
@@ -596,6 +615,18 @@ class UIManager {
                 if (game.inventory.addItem(item)) {
                     itemDiv.classList.add('taken');
                     this.inventoryUI.render();
+
+                    // Check if all items are taken
+                    const allTaken = Array.from(extractionItemsGrid.children).every(child =>
+                        child.classList.contains('taken')
+                    );
+
+                    if (allTaken) {
+                        setTimeout(() => {
+                            const doneBtn = document.getElementById('doneManagingBtn');
+                            if (doneBtn) doneBtn.click();
+                        }, 500); // Small delay for better UX
+                    }
                 } else {
                     alert('Inventory is full! Destroy items to make space.');
                 }
