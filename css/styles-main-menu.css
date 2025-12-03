@@ -1,0 +1,194 @@
+/* Main Menu Styles */
+#mainMenu {
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.animated-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at center, rgba(10, 0, 30, 0) 0%, rgba(10, 0, 30, 0.8) 100%);
+    z-index: 0;
+    overflow: hidden;
+}
+
+.animated-bg::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300%;
+    height: 300%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background:
+        conic-gradient(from 0deg at 50% 50%,
+            transparent 0deg,
+            rgba(138, 43, 226, 0.3) 45deg,
+            transparent 90deg,
+            rgba(220, 20, 60, 0.25) 135deg,
+            transparent 180deg,
+            rgba(138, 43, 226, 0.3) 225deg,
+            transparent 270deg,
+            rgba(100, 20, 150, 0.28) 315deg,
+            transparent 360deg),
+        radial-gradient(ellipse at center,
+            transparent 0%,
+            rgba(138, 43, 226, 0.1) 30%,
+            rgba(220, 20, 60, 0.15) 50%,
+            transparent 70%);
+    animation: vortexSpin 40s linear infinite;
+    opacity: 0.8;
+}
+
+.animated-bg::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 250%;
+    height: 250%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background:
+        conic-gradient(from 90deg at 50% 50%,
+            transparent 0deg,
+            rgba(220, 20, 60, 0.2) 60deg,
+            transparent 120deg,
+            rgba(138, 43, 226, 0.25) 180deg,
+            transparent 240deg,
+            rgba(100, 20, 150, 0.2) 300deg,
+            transparent 360deg),
+        radial-gradient(circle at center,
+            rgba(138, 43, 226, 0.2) 0%,
+            transparent 40%,
+            rgba(220, 20, 60, 0.15) 60%,
+            transparent 80%);
+    animation: vortexSpin 50s linear infinite reverse;
+    opacity: 0.7;
+}
+
+@keyframes vortexSpin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) rotate(180deg) scale(1.05);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg) scale(1);
+    }
+}
+
+.menu-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 3rem;
+    background: rgba(10, 0, 30, 0.7);
+    border-radius: 20px;
+    border: 2px solid rgba(138, 43, 226, 0.3);
+    backdrop-filter: blur(10px);
+    box-shadow:
+        0 0 60px rgba(138, 43, 226, 0.4),
+        inset 0 0 60px rgba(138, 43, 226, 0.1);
+}
+
+.game-title {
+    font-family: 'Creepster', cursive;
+    font-size: 5rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.1em;
+    background: linear-gradient(135deg, #dc143c 0%, #8a2be2 50%, #dc143c 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 3s ease infinite;
+    text-shadow: 0 0 30px rgba(220, 20, 60, 0.5);
+}
+
+.title-glow {
+    display: block;
+    font-size: 4rem;
+    margin-top: -1rem;
+    color: #8a2be2;
+    -webkit-text-fill-color: #8a2be2;
+    filter: drop-shadow(0 0 20px rgba(138, 43, 226, 0.8));
+}
+
+@keyframes gradientShift {
+
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+.tagline {
+    font-size: 1.2rem;
+    color: #b19cd9;
+    margin-bottom: 3rem;
+    letter-spacing: 0.05em;
+}
+
+.boss-preview {
+    margin-top: 3rem;
+}
+
+.preview-text {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 1rem;
+}
+
+.boss-icons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.boss-icon {
+    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(138, 43, 226, 0.2);
+    border: 2px solid rgba(138, 43, 226, 0.4);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.boss-icon:hover {
+    transform: translateY(-5px) scale(1.1);
+    border-color: #ff00ff;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+    background: rgba(255, 0, 255, 0.2);
+}
+
+.boss-icon.unselected {
+    opacity: 0.3;
+    filter: grayscale(100%);
+    border-color: #444;
+    box-shadow: none;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.boss-icon.unselected:hover {
+    transform: translateY(-2px) scale(1.05);
+    opacity: 0.5;
+    border-color: #666;
+}

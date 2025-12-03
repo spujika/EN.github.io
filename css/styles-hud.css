@@ -1,0 +1,342 @@
+/* HUD & Game Canvas Styles */
+#gameContainer {
+    background: #000;
+    position: relative;
+}
+
+#gameCanvas {
+    display: block;
+    background: linear-gradient(135deg, #0f0520 0%, #1a0a2e 100%);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+/* HUD */
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 1.5rem;
+    pointer-events: none;
+}
+
+.hud-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.5rem;
+    gap: 2rem;
+}
+
+.hud-top .boss-info {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Bottom Player HUD */
+.hud-bottom {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+}
+
+.hud-section {
+    background: rgba(10, 0, 30, 0.85);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border: 2px solid rgba(138, 43, 226, 0.4);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.boss-info {
+    flex: 1;
+    max-width: 400px;
+}
+
+.label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.value {
+    font-size: 2rem;
+    font-weight: 900;
+}
+
+.level-value {
+    background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.boss-name {
+    font-size: 1.5rem;
+    font-weight: 900;
+    margin-bottom: 0.5rem;
+    color: #dc143c;
+    text-shadow: 0 0 10px rgba(220, 20, 60, 0.5);
+}
+
+.boss-health-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.health-bar {
+    flex: 1;
+    height: 30px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.boss-bar {
+    min-width: 250px;
+}
+
+.player-bar {
+    min-width: 200px;
+}
+
+.health-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.boss-fill {
+    background: linear-gradient(90deg, #dc143c 0%, #8a2be2 100%);
+    box-shadow: 0 0 20px rgba(220, 20, 60, 0.8);
+}
+
+.player-stat-group .health-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+}
+
+.health-fill::after,
+.player-stat-group .health-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+.health-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 80px;
+}
+
+.dash-charges-container {
+    display: flex;
+    gap: 4px;
+    margin-top: 5px;
+    width: 100%;
+    /* Match health bar width */
+}
+
+.dash-charge {
+    flex: 1;
+    /* Split evenly based on number of charges */
+    height: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #FFD700;
+    position: relative;
+    overflow: hidden;
+}
+
+.dash-charge.full::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #FFD700;
+}
+
+.dash-charge.recharging::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--recharge-progress, 0%);
+    height: 100%;
+    background: #FFD700;
+}
+
+.player-hud {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px 30px;
+    border-radius: 10px;
+    border: 2px solid rgba(138, 43, 226, 0.5);
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.3);
+}
+
+.player-fill,
+.player-bar .player-fill,
+.player-stat-group .player-bar .player-fill,
+.player-stat-group .health-fill.player-fill {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%) !important;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.6) !important;
+}
+
+.player-stat-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 150px;
+}
+
+.player-stat-group .label {
+    font-size: 12px;
+    color: #b19cd9;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+
+.player-stat-group .health-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+}
+
+.player-stat-group .health-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+/* Update dash container for side-by-side layout */
+.player-stat-group .dash-charges-container {
+    margin-top: 0;
+    height: 20px;
+    width: 150px;
+}
+
+.player-stat-group .dash-charge {
+    height: 20px;
+}
+
+/* FORCE player health bar to be green */
+#playerHealthFill {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%) !important;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.6) !important;
+    /* REMOVE: width: 100% !important; */
+}
+
+/* Fix player health bar container in bottom HUD */
+.player-stat-group .health-bar.player-bar {
+    height: 30px !important;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    position: relative;
+    min-width: 200px;
+}
+
+.player-stat-group .health-fill {
+    height: 100% !important;
+    position: relative;
+}
+
+/* Hotbar Styling */
+.hotbar-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    justify-content: center;
+}
+
+.hotbar-slot {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(138, 43, 226, 0.5);
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.hotbar-slot:hover {
+    border-color: rgba(138, 43, 226, 0.8);
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.4);
+    transform: translateY(-2px);
+}
+
+.hotbar-key {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 10px;
+    color: #b19cd9;
+    font-weight: bold;
+}
+
+.hotbar-icon {
+    font-size: 32px;
+}
+
+.hotbar-quantity {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 12px;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 3px #000;
+}
+
+.hotbar-slot.empty .hotbar-icon::after {
+    content: '∅';
+    font-size: 24px;
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.hotbar-slot.on-cooldown {
+    opacity: 0.5;
+    pointer-events: none;
+}

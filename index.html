@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eternal Nightmare</title>
+    <meta name="description"
+        content="A top-down arena shooter where you fight increasingly powerful bosses in an endless nightmare">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Orbitron:wght@400;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Prevent right-click context menu -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                return false;
+            });
+        });
+    </script>
+
+    <!-- Component-based CSS -->
+    <link rel="stylesheet" href="css/styles-base.css">
+    <link rel="stylesheet" href="css/styles-main-menu.css">
+    <link rel="stylesheet" href="css/styles-hud.css">
+    <link rel="stylesheet" href="css/styles-modals.css">
+    <link rel="stylesheet" href="css/styles-extraction.css">
+    <link rel="stylesheet" href="css/styles-inventory.css">
+    <link rel="stylesheet" href="css/styles-responsive.css">
+</head>
+
+<body>
+    <!-- Template System - Loads all UI components -->
+    <script src="src/ui/templates/main-menu-template.js"></script>
+    <script src="src/ui/templates/hud-template.js"></script>
+    <script src="src/ui/templates/extraction-template.js"></script>
+    <script src="src/ui/templates/modifier-template.js"></script>
+    <script src="src/ui/templates/inventory-template.js"></script>
+    <script src="src/ui/templates/gameover-template.js"></script>
+    <script src="src/ui/templates/modals-template.js"></script>
+    <script src="src/ui/templates/debug-template.js"></script>
+    <script src="src/ui/templates.js"></script>
+
+    <!-- Game Scripts -->
+    <!-- Items System -->
+    <script src="src/items/all-items.js"></script>
+
+    <!-- Inventory System -->
+    <script src="src/inventory/inventory-manager.js"></script>
+
+    <!-- Core Game -->
+    <script src="src/core/projectiles.js"></script>
+    <script src="src/core/player.js"></script>
+
+    <!-- Bosses -->
+    <script src="src/bosses/base-boss.js"></script>
+    <script src="src/bosses/crimson-reaper.js"></script>
+    <script src="src/bosses/void-sorcerer.js"></script>
+    <script src="src/bosses/iron-colossus.js"></script>
+    <script src="src/bosses/swarm-queen.js"></script>
+    <script src="src/bosses/chaos-phantom.js"></script>
+    <script src="src/bosses/boss-factory.js"></script>
+
+    <!-- Game Systems -->
+    <script src="src/core/modifiers.js"></script>
+
+    <!-- UI -->
+    <script src="src/ui/ui-manager.js"></script>
+
+    <!-- Merchant -->
+    <script src="src/core/merchant.js"></script>
+
+    <!-- Game Manager -->
+    <script src="src/core/game.js"></script>
+
+    <!-- Debug -->
+    <script src="src/debug/debug.js"></script>
+</body>
+
+</html>

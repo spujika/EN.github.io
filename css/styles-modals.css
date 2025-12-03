@@ -1,0 +1,223 @@
+/* Modal Screens - Modifiers & Game Over */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, rgba(26, 10, 46, 0.95) 0%, rgba(10, 0, 30, 0.95) 100%);
+    padding: 3rem;
+    border-radius: 20px;
+    border: 2px solid rgba(138, 43, 226, 0.5);
+    box-shadow: 0 0 60px rgba(138, 43, 226, 0.6);
+    max-width: 800px;
+    text-align: center;
+}
+
+.modal-title {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #8a2be2 0%, #dc143c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.game-over-title {
+    font-family: 'Creepster', cursive;
+    font-size: 4rem;
+}
+
+.modal-subtitle {
+    font-size: 1.1rem;
+    color: #b19cd9;
+    margin-bottom: 2rem;
+}
+
+/* Modifier Grid */
+.modifier-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.modifier-card {
+    background: rgba(138, 43, 226, 0.1);
+    border: 2px solid rgba(138, 43, 226, 0.3);
+    border-radius: 15px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.modifier-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+    transform: rotate(45deg);
+    transition: all 0.6s ease;
+}
+
+.modifier-card:hover {
+    border-color: rgba(138, 43, 226, 0.8);
+    background: rgba(138, 43, 226, 0.2);
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 10px 40px rgba(138, 43, 226, 0.5);
+}
+
+.modifier-card:hover::before {
+    top: 100%;
+    left: 100%;
+}
+
+.modifier-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.modifier-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #fff;
+}
+
+.modifier-description {
+    font-size: 0.9rem;
+    color: #b19cd9;
+    line-height: 1.4;
+}
+
+.modifier-value {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #dc143c;
+    margin-top: 0.5rem;
+}
+
+/* Stats Container */
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    margin: 2rem 0 3rem;
+    gap: 2rem;
+}
+
+.stat-item {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #8a2be2 0%, #dc143c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Modifier Summary */
+.modifier-summary-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: rgba(138, 43, 226, 0.1);
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    border-radius: 12px;
+}
+
+.modifier-summary-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #b19cd9;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.modifier-summary-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.modifier-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(138, 43, 226, 0.2);
+    border-radius: 8px;
+}
+
+.modifier-summary-icon {
+    font-size: 1.5rem;
+}
+
+.modifier-summary-text {
+    flex: 1;
+}
+
+.modifier-summary-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.modifier-summary-count {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.modifier-summary-value {
+    font-size: 0.85rem;
+    color: #dc143c;
+    font-weight: 700;
+}
+
+#debugMenu .modal-content {
+    max-width: 540px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.player-stat-group .health-bar {
+    height: 30px !important;
+}
+
+.player-stat-group .health-fill {
+    height: 100% !important;
+}
+
+/* FORCE player health bar to be green AND visible */
+#playerHealthFill {
+    background: linear-gradient(90deg, #00ff88 0%, #00cc66 100%) !important;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.6) !important;
+    height: 30px !important;
+    /* ADD THIS - force the height */
+    min-height: 30px !important;
+    /* Double ensure */
+}
