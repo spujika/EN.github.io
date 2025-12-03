@@ -11,9 +11,7 @@ class IronColossus extends Boss {
         this.health = this.maxHealth;
         this.targetDistance = 150;
 
-        // Ability Pool
-        this.abilityPool = ['groundSlam', 'boulderToss', 'chargeRush', 'seismicFissure', 'earthquake'];
-        this.startingAbility = 'groundSlam';
+
 
         this.slamCooldown = 0;
         this.isCharging = false;
@@ -124,8 +122,8 @@ class IronColossus extends Boss {
     }
 
     handleAttacks(player, projectiles, level, particles, dt) {
-        // Ability 1: Ground Slam
-        if (this.unlockedAbilities.includes('groundSlam') && this.slamCooldown === 0) {
+        // Ability 1: Ground Slam (Level 1+)
+        if (level >= 1 && this.slamCooldown <= 0) {
             // Create shockwave
             const step = Math.PI / (8 + this.projectileCount * 2);
             for (let angle = 0; angle < Math.PI * 2; angle += step) {
@@ -140,8 +138,8 @@ class IronColossus extends Boss {
         }
         if (this.slamCooldown > 0) this.slamCooldown -= dt;
 
-        // Ability 2: Boulder Toss
-        if (this.unlockedAbilities.includes('boulderToss') && this.attackCooldown === 0) {
+        // Ability 2: Boulder Toss (Level 5+)
+        if (level >= 5 && this.attackCooldown <= 0) {
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
             const speed = 270 * this.projectileSpeedMultiplier; // 4.5 * 60
             const count = 1 + this.projectileCount;
@@ -157,8 +155,8 @@ class IronColossus extends Boss {
             this.attackCooldown = this.attackCooldownMax;
         }
 
-        // Ability 3: Charge Rush
-        if (this.unlockedAbilities.includes('chargeRush') && !this.isCharging && Math.random() < 0.005) {
+        // Ability 3: Charge Rush (Level 10+)
+        if (level >= 10 && !this.isCharging && Math.random() < 0.005) {
             this.isCharging = true;
             this.chargeAngle = Math.atan2(player.y - this.y, player.x - this.x);
             this.chargeDuration = 1.0; // 60 frames / 60
@@ -197,8 +195,8 @@ class IronColossus extends Boss {
             if (this.attackCooldown > 0) this.attackCooldown -= dt;
         }
 
-        // Ability 4: Seismic Fissure
-        if (this.unlockedAbilities.includes('seismicFissure') && Math.random() < 0.004) {
+        // Ability 4: Seismic Fissure (Level 15+)
+        if (level >= 15 && Math.random() < 0.004) {
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
 
             for (let i = 0; i < 10; i++) {
@@ -217,8 +215,8 @@ class IronColossus extends Boss {
             }
         }
 
-        // Ability 5: Earthquake
-        if (this.unlockedAbilities.includes('earthquake') && Math.random() < 0.001) {
+        // Ability 5: Earthquake (Level 20+)
+        if (level >= 20 && Math.random() < 0.001) {
             // Create multiple explosion zones with safe spots
             for (let i = 0; i < 12; i++) {
                 setTimeout(() => {

@@ -10,9 +10,7 @@ class VoidSorcerer extends Boss {
         this.health = this.maxHealth;
         this.targetDistance = 300; // Prefers long range
 
-        // Ability Pool
-        this.abilityPool = ['darkBolt', 'voidOrbs', 'gravityWell', 'voidRift', 'darkStar'];
-        this.startingAbility = 'voidOrbs';
+
 
         this.orbs = [];
         this.gravityWells = [];
@@ -118,8 +116,8 @@ class VoidSorcerer extends Boss {
     }
 
     handleAttacks(player, projectiles, level, particles, dt) {
-        // Ability 1: Dark Bolt
-        if (this.unlockedAbilities.includes('darkBolt') && this.attackCooldown === 0 && !this.blackHoleActive) {
+        // Ability 1: Dark Bolt (Level 5+)
+        if (level >= 5 && this.attackCooldown <= 0 && !this.blackHoleActive) {
             const count = 1 + this.projectileCount;
             for (let i = 0; i < count; i++) {
                 const spread = (i - (count - 1) / 2) * 0.2;
@@ -134,8 +132,8 @@ class VoidSorcerer extends Boss {
             this.attackCooldown = this.attackCooldownMax;
         }
 
-        // Ability 2: Void Orbs
-        if (this.unlockedAbilities.includes('voidOrbs')) {
+        // Ability 2: Void Orbs (Level 1+)
+        if (level >= 1) {
             // Maintain orbiting orbs
             this.orbs = this.orbs.filter(orb => orb.active);
             const maxOrbs = 3 + this.projectileCount;
@@ -168,8 +166,8 @@ class VoidSorcerer extends Boss {
             });
         }
 
-        // Ability 3: Gravity Well
-        if (this.unlockedAbilities.includes('gravityWell') && Math.random() < 0.008 && !this.blackHoleActive) {
+        // Ability 3: Gravity Well (Level 10+)
+        if (level >= 10 && Math.random() < 0.008 && !this.blackHoleActive) {
             this.gravityWells.push({
                 x: player.x,
                 y: player.y,
@@ -185,8 +183,8 @@ class VoidSorcerer extends Boss {
             return well.age < well.lifetime;
         });
 
-        // Ability 4: Void Rift
-        if (this.unlockedAbilities.includes('voidRift') && Math.random() < 0.005 && !this.blackHoleActive) {
+        // Ability 4: Void Rift (Level 15+)
+        if (level >= 15 && Math.random() < 0.005 && !this.blackHoleActive) {
             const angle = Math.random() * Math.PI * 2;
             this.voidRifts.push({
                 x: this.canvas.width / 2 + Math.cos(angle) * 200,
@@ -219,8 +217,8 @@ class VoidSorcerer extends Boss {
             return rift.age < rift.lifetime;
         });
 
-        // Ability 5: Dark Star
-        if (this.unlockedAbilities.includes('darkStar') && !this.blackHoleActive) {
+        // Ability 5: Dark Star (Level 20+)
+        if (level >= 20 && !this.blackHoleActive) {
             if (!this.darkStarCharging && Math.random() < 0.002) {
                 this.darkStarCharging = true;
                 this.darkStarCharge = 0;

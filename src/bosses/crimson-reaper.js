@@ -30,9 +30,7 @@ class CrimsonReaper extends Boss {
         this.executionCharge = 0;
         this.executionAngle = 0;
 
-        // Ability Pool
-        this.abilityPool = ['dashStrike', 'bloodSlash', 'shadowStep', 'crimsonTornado', 'reapersDance'];
-        this.startingAbility = 'bloodSlash';
+
     }
 
     updateAI(player, distance, dt) {
@@ -85,7 +83,7 @@ class CrimsonReaper extends Boss {
 
     handleAttacks(player, projectiles, level, particles, dt) {
         // Phase 2+: Parry Stance (Level 5+)
-        if (level >= 5 && this.phase >= 2 && this.parryCooldown === 0 && !this.isExecuting && !this.isDashing) {
+        if (level >= 5 && this.phase >= 2 && this.parryCooldown <= 0 && !this.isExecuting && !this.isDashing) {
             if (Math.random() < 0.005) {
                 this.parryActive = true;
                 this.parryDuration = 2.0; // 120 frames / 60
@@ -104,13 +102,13 @@ class CrimsonReaper extends Boss {
         }
         if (this.parryCooldown > 0) this.parryCooldown -= dt;
 
-        // Phase 2+: Execution (Cone Attack) (Level 5+)
-        if (level >= 5 && this.phase >= 2 && this.executionCooldown === 0 && !this.isDashing) {
+        // Execution (Cone Attack)
+        if (level >= 1 && this.phase >= 1 && this.executionCooldown <= 0 && !this.isDashing) {
             if (Math.random() < 0.008) {
                 this.isExecuting = true;
                 this.executionCharge = 1.0; // 60 frames / 60
                 this.executionAngle = Math.atan2(player.y - this.y, player.x - this.x);
-                this.executionCooldown = 6.66; // 400 frames / 60
+                this.executionCooldown = 3.33; // 400 frames / 60
             }
         }
 
@@ -136,8 +134,8 @@ class CrimsonReaper extends Boss {
         if (this.executionCooldown > 0) this.executionCooldown -= dt;
 
 
-        // Ability 1: Dash Strike
-        if (this.unlockedAbilities.includes('dashStrike') && this.dashCooldown === 0 && !this.isDashing) {
+        // Ability 1: Dash Strike (Level 1+)
+        if (level >= 1 && this.dashCooldown <= 0 && !this.isDashing) {
             const dx = player.x - this.x;
             const dy = player.y - this.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
@@ -161,8 +159,8 @@ class CrimsonReaper extends Boss {
 
         if (this.dashCooldown > 0) this.dashCooldown -= dt;
 
-        // Ability 2: Blood Slash
-        if (this.unlockedAbilities.includes('bloodSlash') && this.attackCooldown === 0) {
+        // Ability 2: Blood Slash (Level 5+)
+        if (level >= 5 && this.attackCooldown <= 0) {
             const count = 2 + this.projectileCount;
             for (let i = -count; i <= count; i++) {
                 const angle = this.angle + (i * Math.PI / 8);
@@ -177,8 +175,8 @@ class CrimsonReaper extends Boss {
             this.attackCooldown = this.attackCooldownMax;
         }
 
-        // Ability 3: Shadow Step
-        if (this.unlockedAbilities.includes('shadowStep') && this.teleportCooldown === 0) {
+        // Ability 3: Shadow Step (Level 10+)
+        if (level >= 10 && this.teleportCooldown <= 0) {
             // Teleport behind player
             const dist = 80;
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
@@ -196,8 +194,8 @@ class CrimsonReaper extends Boss {
         }
         if (this.teleportCooldown > 0) this.teleportCooldown -= dt;
 
-        // Ability 4: Crimson Tornado
-        if (this.unlockedAbilities.includes('crimsonTornado') && this.spinDuration > 0) {
+        // Ability 4: Crimson Tornado (Level 15+)
+        if (level >= 15 && this.spinDuration > 0) {
             // Create damage zone while spinning
             const angle = (Date.now() / 50) % (Math.PI * 2);
             const count = 8 + (this.projectileCount * 2);
@@ -212,13 +210,13 @@ class CrimsonReaper extends Boss {
                 ));
             }
             this.spinDuration -= dt;
-        } else if (this.unlockedAbilities.includes('crimsonTornado') && this.attackCooldown === 0 && Math.random() < 0.3) {
+        } else if (level >= 15 && this.attackCooldown <= 0 && Math.random() < 0.3) {
             this.spinDuration = 1.0; // 60 frames / 60
             this.attackCooldown = this.attackCooldownMax * 2;
         }
 
-        // Ability 5: Reaper's Dance
-        if (this.unlockedAbilities.includes('reapersDance') && !this.isDashing && Math.random() < 0.01) {
+        // Ability 5: Reaper's Dance (Level 20+)
+        if (level >= 20 && !this.isDashing && Math.random() < 0.01) {
             // This is handled by multiple dash attacks
             this.dashCooldown = Math.max(0, this.dashCooldown - 1.0); // 60 frames / 60
         }

@@ -36,41 +36,9 @@ class Boss {
         this.flashTime = 0;
 
         this.name = 'Boss';
-
-        // Ability System
-        this.abilityPool = []; // To be defined by subclasses
-        this.startingAbility = null; // To be defined by subclasses
-        this.unlockedAbilities = [];
     }
 
-    unlockAbilities(level) {
-        // Calculate how many abilities should be unlocked (1 every 5 levels)
-        // Level 1-4: 0, Level 5-9: 1, Level 10-14: 2, etc.
-        const abilitiesToUnlock = Math.floor(level / 5);
 
-        // Reset unlocked abilities
-        this.unlockedAbilities = [];
-
-        // Always add starting ability if defined
-        if (this.startingAbility) {
-            this.unlockedAbilities.push(this.startingAbility);
-        }
-
-        if (abilitiesToUnlock > 0 && this.abilityPool.length > 0) {
-            // Create a copy of the pool EXCLUDING the starting ability to avoid duplicates
-            const pool = this.abilityPool.filter(a => a !== this.startingAbility);
-
-            // Shuffle pool (Fisher-Yates)
-            for (let i = pool.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [pool[i], pool[j]] = [pool[j], pool[i]];
-            }
-
-            // Pick the first N abilities
-            this.unlockedAbilities = pool.slice(0, Math.min(abilitiesToUnlock, pool.length));
-            console.log(`${this.name} unlocked abilities:`, this.unlockedAbilities);
-        }
-    }
 
     update(player, projectiles, level, particles, dt) {
         // Calculate angle to player

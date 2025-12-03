@@ -10,9 +10,7 @@ class SwarmQueen extends Boss {
         this.health = this.maxHealth;
         this.targetDistance = 250;
 
-        // Ability Pool
-        this.abilityPool = ['spawnDrones', 'stickyFloor', 'eggSacs', 'webTrap', 'eliteGuard'];
-        this.startingAbility = 'spawnDrones';
+
 
         this.minions = [];
         this.webs = [];
@@ -30,8 +28,8 @@ class SwarmQueen extends Boss {
 
         // Minion Management & Spawning (Restored)
         this.minions = this.minions.filter(m => m.health > 0);
-        // Ability 1: Spawn Drones
-        if (this.unlockedAbilities.includes('spawnDrones')) {
+        // Ability 1: Spawn Drones (Level 1+)
+        if (level >= 1) {
             if (this.minionSpawnCooldown <= 0) {
                 const spawnCount = 1 + this.projectileCount;
                 for (let i = 0; i < spawnCount; i++) {
@@ -70,8 +68,8 @@ class SwarmQueen extends Boss {
             }
         });
 
-        // Ability 2: Sticky Floor
-        if (this.unlockedAbilities.includes('stickyFloor')) {
+        // Ability 2: Sticky Floor (Level 5+)
+        if (level >= 5) {
             // Spawn sticky floor
             if (this.stickyFloorCooldown <= 0 && Math.random() < 0.01) {
                 this.stickyFloors.push({
@@ -101,8 +99,8 @@ class SwarmQueen extends Boss {
             });
         }
 
-        // Ability 3: Egg Sacs
-        if (this.unlockedAbilities.includes('eggSacs')) {
+        // Ability 3: Egg Sacs (Level 10+)
+        if (level >= 10) {
             if (this.eggSacCooldown <= 0 && this.eggSacs.length < 3 && Math.random() < 0.005) {
                 this.eggSacs.push({
                     x: this.x + (Math.random() - 0.5) * 150,

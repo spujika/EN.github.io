@@ -192,8 +192,7 @@ class Game {
         // REMOVED per user request: Stats do not increase by level, only by modifiers
         this.boss.health = this.boss.maxHealth;
 
-        // Unlock abilities based on level
-        this.boss.unlockAbilities(this.level);
+
 
         // Apply active modifiers
         this.modifierManager.applyModifiers(this.boss);

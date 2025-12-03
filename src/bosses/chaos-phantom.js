@@ -11,9 +11,7 @@ class ChaosPhantom extends Boss {
         this.health = this.maxHealth;
         this.targetDistance = 200;
 
-        // Ability Pool
-        this.abilityPool = ['chaosBolt', 'phaseShift', 'mirrorImage', 'realityWarp', 'pandemonium'];
-        this.startingAbility = 'chaosBolt';
+
 
         this.clones = [];
         this.controlsInverted = false;
@@ -165,8 +163,8 @@ class ChaosPhantom extends Boss {
     }
 
     handleAttacks(player, projectiles, level, particles, dt) {
-        // Ability 1: Chaos Bolt
-        if (this.unlockedAbilities.includes('chaosBolt') && this.attackCooldown === 0 && !this.realCloneActive) {
+        // Ability 1: Chaos Bolt (Level 1+)
+        if (level >= 1 && this.attackCooldown <= 0 && !this.realCloneActive) {
             const patterns = ['spread', 'spiral', 'circle', 'burst'];
             const pattern = patterns[Math.floor(Math.random() * patterns.length)];
 
@@ -221,8 +219,8 @@ class ChaosPhantom extends Boss {
             this.attackCooldown = 3.0; // 180 frames / 60
         }
 
-        // Ability 2: Phase Shift
-        if (this.unlockedAbilities.includes('phaseShift') && Math.random() < 0.008) {
+        // Ability 2: Phase Shift (Level 5+)
+        if (level >= 5 && Math.random() < 0.008) {
             this.x = Math.random() * this.canvas.width;
             this.y = Math.random() * this.canvas.height;
 
@@ -233,8 +231,8 @@ class ChaosPhantom extends Boss {
             }
         }
 
-        // Ability 3: Mirror Image
-        if (this.unlockedAbilities.includes('mirrorImage')) {
+        // Ability 3: Mirror Image (Level 10+)
+        if (level >= 10) {
             this.clones = this.clones.filter(c => c.lifetime > 0);
             const maxClones = 2 + this.projectileCount;
 
@@ -264,8 +262,8 @@ class ChaosPhantom extends Boss {
             });
         }
 
-        // Ability 4: Reality Warp
-        if (this.unlockedAbilities.includes('realityWarp') && !this.controlsInverted && Math.random() < 0.003) {
+        // Ability 4: Reality Warp (Level 15+)
+        if (level >= 15 && !this.controlsInverted && Math.random() < 0.003) {
             this.controlsInverted = true;
             this.controlsInvertDuration = 3.0; // 180 frames / 60
         }
@@ -277,8 +275,8 @@ class ChaosPhantom extends Boss {
             }
         }
 
-        // Ability 5: Pandemonium
-        if (this.unlockedAbilities.includes('pandemonium') && Math.random() < 0.015) {
+        // Ability 5: Pandemonium (Level 20+)
+        if (level >= 20 && Math.random() < 0.015) {
             // Randomly use any previous attack
             this.attackCooldown = 0;
         }
