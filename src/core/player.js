@@ -200,8 +200,13 @@ class Player {
         }
     }
 
-    takeDamage(amount, particles) {
+    takeDamage(amount, particles, flags = {}) {
         if (this.invulnerable || this.debugInvincible) return;
+
+        // Check for dash skippable damage
+        if (flags.dashSkippable && this.isDashing) {
+            return false; // Skipped damage
+        }
 
         this.health -= amount;
         this.invulnerable = true;

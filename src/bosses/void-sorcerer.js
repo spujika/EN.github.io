@@ -27,6 +27,8 @@ class VoidSorcerer extends Boss {
         this.bulletHellActive = false;
         this.bulletHellAngle = 0;
         this.bulletHellDuration = 0;
+
+        this.darkBoltCooldown = 0;
     }
 
     takeDamage(amount, particles) {
@@ -117,7 +119,7 @@ class VoidSorcerer extends Boss {
 
     handleAttacks(player, projectiles, level, particles, dt) {
         // Ability 1: Dark Bolt (Level 5+)
-        if (level >= 5 && this.attackCooldown <= 0 && !this.blackHoleActive) {
+        if (level >= 5 && this.darkBoltCooldown <= 0 && !this.blackHoleActive) {
             const count = 1 + this.projectileCount;
             for (let i = 0; i < count; i++) {
                 const spread = (i - (count - 1) / 2) * 0.2;
@@ -129,8 +131,9 @@ class VoidSorcerer extends Boss {
                 projectiles[projectiles.length - 1].x += Math.cos(this.angle + Math.PI / 2) * spread * 20;
                 projectiles[projectiles.length - 1].y += Math.sin(this.angle + Math.PI / 2) * spread * 20;
             }
-            this.attackCooldown = this.attackCooldownMax;
+            this.darkBoltCooldown = this.attackCooldownMax;
         }
+        if (this.darkBoltCooldown > 0) this.darkBoltCooldown -= dt;
 
         // Ability 2: Void Orbs (Level 1+)
         if (level >= 1) {

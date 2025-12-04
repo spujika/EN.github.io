@@ -31,7 +31,7 @@ class Game {
         this.currentBossType = null; // Store boss type for the run
 
         // Boss Selection ['CrimsonReaper', 'VoidSorcerer', 'IronColossus', 'SwarmQueen', 'ChaosPhantom']
-        this.availableBosses = ['CrimsonReaper'];
+        this.availableBosses = ['IronColossus'];
 
         // Current Run Rewards
         this.currentReward = null;
@@ -267,7 +267,7 @@ class Game {
         // Update projectiles
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const proj = this.projectiles[i];
-            proj.update(this.canvas, dt);
+            proj.update(this.canvas, dt, this.particles);
 
             // Remove if out of bounds or inactive
             if (proj.x < 0 || proj.x > this.canvas.width ||
@@ -379,13 +379,94 @@ class Game {
                         }
                     }
                 }
+
+                // Check collision with BoulderProjectiles
+                // Only check if projectile is still active (wasn't destroyed by minion)
+                if (i < this.projectiles.length && this.projectiles[i] === proj) {
+                    for (let j = this.projectiles.length - 1; j >= 0; j--) {
+                        const otherProj = this.projectiles[j];
+                        if (otherProj instanceof BoulderProjectile && otherProj.active) {
+                            if (proj.checkCollision(otherProj)) {
+                                // Hit a boulder!
+                                otherProj.takeHit(this.particles);
+
+                                // Create impact particles
+                                for (let k = 0; k < 3; k++) {
+                                    this.particles.push(new Particle(proj.x, proj.y, proj.color, 2));
+                                }
+
+                                this.projectiles.splice(i, 1);
+                                break; // Player projectile destroyed
+                            }
+                        }
+                    }
+                }
             } else {
                 // Boss hit player
                 const dx = proj.x - this.player.x;
                 const dy = proj.y - this.player.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < this.player.size + proj.size) {
+                // Special handling for ShockwaveProjectile
+                if (proj instanceof ShockwaveProjectile) {
+                    // Check collision with player
+                    if (proj.checkCollision(this.player)) {
+                        // If dashing, we skip damage AND do not register hit (so we can check again next frame)
+                        // If NOT dashing, we take damage and register hit
+                        if (!this.player.isDashing) {
+                            if (this.player.takeDamage(proj.damage, this.particles)) {
+                                this.playerDied();
+                            }
+                            proj.registerHit(this.player);
+                        }
+                    }
+
+                    // Check collision with player projectiles (destroy them)
+                    for (let j = this.projectiles.length - 1; j >= 0; j--) {
+                        const otherProj = this.projectiles[j];
+                        if (otherProj.owner === 'player' && otherProj.active) {
+                            if (proj.checkCollision(otherProj)) {
+                                otherProj.active = false;
+                                proj.registerHit(otherProj); // Register hit for projectiles too
+                                // Create destruction particles
+                                for (let k = 0; k < 3; k++) {
+                                    this.particles.push(new Particle(otherProj.x, otherProj.y, otherProj.color, 2));
+                                }
+                            }
+                        }
+                    }
+
+                    // Check collision with Boulders (Shockwave shrinks boulders)
+                    for (let j = this.projectiles.length - 1; j >= 0; j--) {
+                        const otherProj = this.projectiles[j];
+                        if (otherProj instanceof BoulderProjectile && otherProj.active) {
+                            if (proj.checkCollision(otherProj)) {
+                                otherProj.takeHit(this.particles);
+                                proj.registerHit(otherProj);
+                            }
+                        }
+                    }
+
+                    // Check collision with Boss (Self-Damage if not charging)
+                    if (this.boss instanceof IronColossus && !this.boss.isCharging) {
+                        if (proj.checkCollision(this.boss) && proj.safeTime <= 0) {
+                            if (this.boss.takeDamage(proj.damage, this.particles)) {
+                                this.bossDefeated();
+                            }
+                            proj.registerHit(this.boss);
+                        }
+                    }
+
+                    // Shockwave does not get destroyed by hitting player
+                } else if (proj instanceof ExplodingProjectile) {
+                    // Check explosion collision
+                    if (proj.checkExplosionCollision(this.player)) {
+                        if (this.player.takeDamage(proj.damage, this.particles)) {
+                            this.playerDied();
+                        }
+                        // Explosion doesn't get destroyed on hit, it fades out naturally
+                    }
+                } else if (dist < this.player.size + proj.size) {
                     if (this.player.takeDamage(proj.damage, this.particles)) {
                         this.playerDied();
                     }
@@ -394,7 +475,68 @@ class Game {
                     this.projectiles.splice(i, 1);
                 }
             }
+
+            // Boulder vs Boulder Collision
+            if (proj instanceof BoulderProjectile && proj.active) {
+                for (let j = i - 1; j >= 0; j--) {
+                    const other = this.projectiles[j];
+                    if (other instanceof BoulderProjectile && other.active) {
+                        const dx = proj.x - other.x;
+                        const dy = proj.y - other.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const minDist = proj.size + other.size;
+
+                        if (dist < minDist) {
+                            // Collision detected!
+
+                            // 1. Resolve Overlap (push apart)
+                            const overlap = minDist - dist;
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+
+                            // Move both away from each other
+                            const moveX = nx * overlap * 0.5;
+                            const moveY = ny * overlap * 0.5;
+
+                            proj.x += moveX;
+                            proj.y += moveY;
+                            other.x -= moveX;
+                            other.y -= moveY;
+
+                            // 2. Bounce (Elastic Collision)
+                            // Normal vector is (nx, ny)
+                            // Tangent vector is (-ny, nx)
+
+                            // Project velocities onto normal and tangent
+                            const v1n = proj.vx * nx + proj.vy * ny;
+                            const v1t = proj.vx * -ny + proj.vy * nx;
+
+                            const v2n = other.vx * nx + other.vy * ny;
+                            const v2t = other.vx * -ny + other.vy * nx;
+
+                            // Swap normal components (assuming equal mass)
+                            // v1n_new = v2n
+                            // v2n_new = v1n
+
+                            // Convert back to x/y
+                            const v1n_new = v2n;
+                            const v2n_new = v1n;
+
+                            proj.vx = v1n_new * nx - v1t * ny;
+                            proj.vy = v1n_new * ny + v1t * nx;
+
+                            other.vx = v2n_new * nx - v2t * ny;
+                            other.vy = v2n_new * ny + v2t * nx;
+
+                            // 3. Shrink both
+                            proj.takeHit(this.particles);
+                            other.takeHit(this.particles);
+                        }
+                    }
+                }
+            }
         }
+
 
         // Update particles
         for (let i = this.particles.length - 1; i >= 0; i--) {

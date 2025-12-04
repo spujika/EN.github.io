@@ -26,6 +26,8 @@ class ChaosPhantom extends Boss {
         this.screenTearCooldown = 1.5; // Staggered start
         this.hasUsedClonePhase2 = false;
         this.hasUsedClonePhase3 = false;
+
+        this.chaosBoltCooldown = 0;
     }
 
     takeDamage(amount, particles) {
@@ -164,7 +166,7 @@ class ChaosPhantom extends Boss {
 
     handleAttacks(player, projectiles, level, particles, dt) {
         // Ability 1: Chaos Bolt (Level 1+)
-        if (level >= 1 && this.attackCooldown <= 0 && !this.realCloneActive) {
+        if (level >= 1 && this.chaosBoltCooldown <= 0 && !this.realCloneActive) {
             const patterns = ['spread', 'spiral', 'circle', 'burst'];
             const pattern = patterns[Math.floor(Math.random() * patterns.length)];
 
@@ -216,8 +218,9 @@ class ChaosPhantom extends Boss {
                     break;
             }
 
-            this.attackCooldown = 3.0; // 180 frames / 60
+            this.chaosBoltCooldown = 3.0; // 180 frames / 60
         }
+        if (this.chaosBoltCooldown > 0) this.chaosBoltCooldown -= dt;
 
         // Ability 2: Phase Shift (Level 5+)
         if (level >= 5 && Math.random() < 0.008) {
@@ -278,7 +281,7 @@ class ChaosPhantom extends Boss {
         // Ability 5: Pandemonium (Level 20+)
         if (level >= 20 && Math.random() < 0.015) {
             // Randomly use any previous attack
-            this.attackCooldown = 0;
+            this.chaosBoltCooldown = 0;
         }
     }
 

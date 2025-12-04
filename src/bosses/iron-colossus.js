@@ -11,19 +11,27 @@ class IronColossus extends Boss {
         this.health = this.maxHealth;
         this.targetDistance = 150;
 
-
-
         this.slamCooldown = 0.5; // Staggered start
+        this.boulderCooldown = 0;
         this.isCharging = false;
         this.chargeAngle = 0;
         this.chargeSpeed = 300; // 5 * 60
         this.chargeDuration = 0;
+        this.attackCooldownMax = 2.0;
+        this.earthquakeCooldown = 0;
+        this.earthquakeMaxCooldown = 8.0; // 8 seconds between earthquakes
         this.bounceCount = 0;
+
+        // Telegraphs
+        this.isSlamming = false;
+        this.slamTelegraphTimer = 0;
+        this.slamTelegraphDuration = 0.5;
 
         // New Mechanics: Armor Plating & Shield Generators
         this.shieldGenerators = [];
         this.armorActive = false;
         this.shieldOrbitAngle = 0;
+        this.armorBroken = false;
     }
 
     update(player, projectiles, level, particles, dt) {
@@ -32,8 +40,8 @@ class IronColossus extends Boss {
     }
 
     updateShields(projectiles, particles, level, dt) {
-        // Activate Armor in Phase 2 (Level 5+)
-        if (level >= 5 && this.phase >= 2 && this.shieldGenerators.length === 0 && !this.armorBroken) {
+        // Activate Armor in Phase 3 (Level 15+)
+        if (level >= 15 && this.phase >= 3 && this.shieldGenerators.length === 0 && !this.armorBroken) {
             if (!this.armorActive) {
                 this.armorActive = true;
                 this.armorBroken = false; // Reset broken state
@@ -72,15 +80,6 @@ class IronColossus extends Boss {
     }
 
     takeDamage(amount, particles) {
-        // Check collision with shield generators first
-        // This logic is tricky because takeDamage is usually called by the projectile hitting the boss
-        // We might need to handle generator collision in the projectile loop or here if we can check source
-        // For now, let's assume projectiles hitting the boss MIGHT hit a shield if it's in the way?
-        // Actually, it's better if the game loop checks collision with generators separately.
-        // But since we don't want to rewrite the main game loop, let's just say:
-        // If armor is active, damage is reduced. To damage generators, the player needs to aim at them.
-        // We need to expose generators as targets.
-
         // Override: If armor is active, reduce damage
         if (this.armorActive) {
             amount *= (1 - this.damageReduction);
@@ -94,11 +93,6 @@ class IronColossus extends Boss {
 
         return super.takeDamage(amount, particles);
     }
-
-    // Helper to check collision with generators (called from Game class potentially, or we handle it here?)
-    // Ideally, the Game class should know about sub-entities. 
-    // For now, let's hack it: The Game class checks collision with Boss. 
-    // We can add a method `checkProjectileCollision` to Boss that handles sub-parts.
 
     checkProjectileCollision(projectile) {
         if (this.armorActive) {
@@ -122,41 +116,50 @@ class IronColossus extends Boss {
     }
 
     handleAttacks(player, projectiles, level, particles, dt) {
-        // Ability 1: Ground Slam (Level 1+)
-        if (level >= 1 && this.slamCooldown <= 0) {
-            // Create shockwave
-            const step = Math.PI / (8 + this.projectileCount * 2);
-            for (let angle = 0; angle < Math.PI * 2; angle += step) {
-                const speed = 120 * this.projectileSpeedMultiplier; // 2 * 60
-                projectiles.push(new Projectile(
+        // Ability 1: Ground Slam (Level 10+)
+        if (level >= 10 && this.slamCooldown <= 0 && !this.isSlamming) {
+            this.isSlamming = true;
+            this.slamTelegraphTimer = this.slamTelegraphDuration;
+            this.slamCooldown = this.attackCooldownMax * 3;
+        }
+
+        if (this.isSlamming) {
+            this.slamTelegraphTimer -= dt;
+            if (this.slamTelegraphTimer <= 0) {
+                this.isSlamming = false;
+                // Create shockwave
+                projectiles.push(new ShockwaveProjectile(
                     this.x, this.y,
-                    Math.cos(angle) * speed, Math.sin(angle) * speed,
-                    18 * this.damageMultiplier, 'boss', '#a9a9a9', 8
+                    120 * this.projectileSpeedMultiplier,
+                    300,
+                    25 * this.damageMultiplier,
+                    'boss'
                 ));
             }
-            this.slamCooldown = this.attackCooldownMax * 1.5;
         }
+
         if (this.slamCooldown > 0) this.slamCooldown -= dt;
 
-        // Ability 2: Boulder Toss (Level 5+)
-        if (level >= 5 && this.attackCooldown <= 0) {
+        // Ability 2: Boulder Toss (Level 1+)
+        if (level >= 1 && this.boulderCooldown <= 0) {
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
             const speed = 270 * this.projectileSpeedMultiplier; // 4.5 * 60
             const count = 1 + this.projectileCount;
 
             for (let i = 0; i < count; i++) {
                 const spread = (i - (count - 1) / 2) * 0.2;
-                projectiles.push(new BouncingProjectile(
+                projectiles.push(new BoulderProjectile(
                     this.x, this.y,
                     Math.cos(angle + spread) * speed, Math.sin(angle + spread) * speed,
-                    20 * this.damageMultiplier, 'boss', '#8b4513'
+                    20 * this.damageMultiplier, 'boss'
                 ));
             }
-            this.attackCooldown = this.attackCooldownMax;
+            this.boulderCooldown = this.attackCooldownMax;
         }
+        if (this.boulderCooldown > 0) this.boulderCooldown -= dt;
 
         // Ability 3: Charge Rush (Level 10+)
-        if (level >= 10 && !this.isCharging && Math.random() < 0.005) {
+        if (level >= 5 && !this.isCharging && Math.random() < 0.005) {
             this.isCharging = true;
             this.chargeAngle = Math.atan2(player.y - this.y, player.x - this.x);
             this.chargeDuration = 1.0; // 60 frames / 60
@@ -189,10 +192,9 @@ class IronColossus extends Boss {
         if (level >= 5 && this.phase === 3) {
             if (particles && Math.random() < 0.2) {
                 particles.push(new Particle(this.x, this.y, '#ff4500', 4));
-                // Ideally this would leave a damaging zone, but for now visual only
             }
             // Increase attack speed in Phase 3
-            if (this.attackCooldown > 0) this.attackCooldown -= dt;
+            if (this.boulderCooldown > 0) this.boulderCooldown -= dt;
         }
 
         // Ability 4: Seismic Fissure (Level 15+)
@@ -215,8 +217,11 @@ class IronColossus extends Boss {
             }
         }
 
-        // Ability 5: Earthquake (Level 20+)
-        if (level >= 20 && Math.random() < 0.001) {
+        // Ability 5: Earthquake (Level 1+)
+        if (this.earthquakeCooldown > 0) this.earthquakeCooldown -= dt;
+
+        if (level >= 20 && this.earthquakeCooldown <= 0) {
+            this.earthquakeCooldown = this.earthquakeMaxCooldown;
             // Create multiple explosion zones with safe spots
             for (let i = 0; i < 12; i++) {
                 setTimeout(() => {
@@ -225,7 +230,8 @@ class IronColossus extends Boss {
 
                     projectiles.push(new ExplodingProjectile(
                         x, y, 0, 0,
-                        25 * this.damageMultiplier, 'boss', '#8b0000'
+                        25 * this.damageMultiplier, 'boss', '#8b0000',
+                        1.5 // 1.5s arming time (Telegraph)
                     ));
                     projectiles[projectiles.length - 1].explode();
                     projectiles[projectiles.length - 1].explosionRadius = 70;
@@ -287,6 +293,32 @@ class IronColossus extends Boss {
                 );
                 ctx.stroke();
             }
+            ctx.restore();
+        }
+
+        // Draw Ground Slam Telegraph
+        if (this.isSlamming) {
+            ctx.save();
+            ctx.strokeStyle = '#a9a9a9';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            const progress = 1 - (this.slamTelegraphTimer / this.slamTelegraphDuration);
+
+            // Shrinking ring (Implosion)
+            const maxOffset = 150;
+            const currentOffset = maxOffset * (1 - progress);
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + currentOffset, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Filling center
+            ctx.fillStyle = '#a9a9a9';
+            ctx.globalAlpha = 0.3 * progress;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size + currentOffset, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.restore();
         }
     }

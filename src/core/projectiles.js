@@ -125,53 +125,6 @@ class BouncingProjectile extends Projectile {
         }
 
         if (this.bounces > this.maxBounces || this.lifetime > this.maxLifetime) {
-            this.active = false;
-        }
-    }
-}
-
-class ExplodingProjectile extends Projectile {
-    constructor(x, y, vx, vy, damage, owner, color = '#ff0000') {
-        super(x, y, vx, vy, damage, owner, color, 10);
-        this.exploded = false;
-        this.explosionRadius = 60;
-        this.explosionTime = 0;
-        this.maxExplosionTime = 0.35; // 20 frames / 60
-    }
-
-    explode() {
-        this.exploded = true;
-        this.vx = 0;
-        this.vy = 0;
-    }
-
-    update(canvas, dt) {
-        if (!this.exploded) {
-            super.update(canvas, dt);
-        } else {
-            this.explosionTime += dt;
-            if (this.explosionTime > this.maxExplosionTime) {
-                this.active = false;
-            }
-        }
-    }
-
-    draw(ctx) {
-        if (!this.exploded) {
-            super.draw(ctx);
-        } else {
-            // Draw explosion
-            const progress = this.explosionTime / this.maxExplosionTime;
-            const radius = this.explosionRadius * progress;
-            const alpha = 1 - progress;
-
-            ctx.save();
-            ctx.globalAlpha = alpha;
-
-            // Outer ring
-            ctx.strokeStyle = this.color;
-            ctx.lineWidth = 5;
-            ctx.shadowBlur = 30;
             ctx.shadowColor = this.color;
             ctx.beginPath();
             ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
@@ -186,8 +139,98 @@ class ExplodingProjectile extends Projectile {
             ctx.restore();
         }
     }
+}
 
+class ExplodingProjectile extends Projectile {
+    constructor(x, y, vx, vy, damage, owner, color = '#ff4500', armingTime = 0) {
+        super(x, y, vx, vy, damage, owner, color, 6);
+        this.isExploding = false;
+        this.explosionRadius = 40;
+        this.explosionDuration = 0.3;
+        this.explosionTimer = 0;
+        this.exploded = false;
+        this.armingTime = armingTime;
+        this.maxArmingTime = armingTime;
+    }
+
+    update(canvas, dt, particles) {
+        if (this.armingTime > 0) {
+            this.armingTime -= dt;
+            return; // Don't move or explode yet
+        }
+
+        if (this.isExploding) {
+            this.explosionTimer += dt;
+            if (this.explosionTimer >= this.explosionDuration) {
+                this.lifetime = this.maxLifetime + 1; // Destroy
+                this.active = false; // Explicitly set active to false
+            }
+            return;
+        }
+
+        super.update(canvas, dt);
+    }
+
+    explode() {
+        this.isExploding = true;
+        this.exploded = true;
+        this.vx = 0;
+        this.vy = 0;
+    }
+
+    draw(ctx) {
+        if (this.armingTime > 0) {
+            // Draw telegraph (Small marker + Faint outline)
+            const progress = 1 - (this.armingTime / this.maxArmingTime);
+            ctx.save();
+
+            // 1. Faint outline of explosion radius (Opacity increases with progress)
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.2 + (0.5 * progress);
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.explosionRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 2. Small pulsing central marker
+            // Pulse speed increases with progress
+            const pulseSpeed = 100 - (50 * progress);
+            const pulse = 1 + Math.sin(Date.now() / pulseSpeed) * 0.2;
+
+            // Color transition: Yellow -> Final Color
+            // Draw yellow base
+            ctx.fillStyle = '#ffff00';
+            ctx.globalAlpha = 0.8;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 6 * pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw final color overlay with increasing opacity
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = progress; // Becomes fully opaque at end
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 6 * pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+            return;
+        }
+
+        if (this.isExploding) {
+            ctx.save();
+            ctx.globalAlpha = 1 - (this.explosionTimer / this.explosionDuration);
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.explosionRadius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        } else {
+            super.draw(ctx);
+        }
+    }
     checkExplosionCollision(entity) {
+        if (this.armingTime > 0) return false; // Don't damage during telegraph
         if (!this.exploded) return false;
 
         const dx = this.x - entity.x;
@@ -343,5 +386,143 @@ class Particle {
 
     isAlive() {
         return this.life > 0;
+    }
+}
+
+class ShockwaveProjectile extends Projectile {
+    constructor(x, y, expansionSpeed, maxRadius, damage, owner, color = '#a9a9a9') {
+        super(x, y, 0, 0, damage, owner, color, 0); // Size 0 initially
+        this.expansionSpeed = expansionSpeed;
+        this.currentRadius = 10;
+        this.maxRadius = maxRadius;
+        this.thickness = 20;
+        this.hitList = []; // Track entities already hit to avoid multi-hits
+        this.safeTime = 0.5; // 0.5 seconds safe window for creator
+    }
+
+    update(canvas, dt) {
+        this.currentRadius += this.expansionSpeed * dt;
+        if (this.safeTime > 0) this.safeTime -= dt;
+
+        if (this.currentRadius >= this.maxRadius) {
+            this.active = false;
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.thickness;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+        ctx.globalAlpha = 1 - (this.currentRadius / this.maxRadius); // Fade out
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.currentRadius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+
+    checkCollision(entity) {
+        // Ring collision: check if entity is touching the ring
+        const dx = this.x - entity.x;
+        const dy = this.y - entity.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Check if entity overlaps with the ring thickness
+        // Ring is from (radius - thickness/2) to (radius + thickness/2)
+        // But for simplicity and gameplay feel, let's just say if it's within the outer edge
+        // and outside the inner edge.
+
+        const outerRadius = this.currentRadius + this.thickness / 2;
+        const innerRadius = this.currentRadius - this.thickness / 2;
+
+        // Check if entity is within the ring band
+        // We add entity size to outer and subtract from inner to be generous/strict as needed
+        // Actually, standard circle collision: distance between centers < r1 + r2
+        // Here, we want to see if the entity circle intersects the ring annulus.
+
+        const distToOuter = Math.abs(dist - this.currentRadius);
+
+        if (distToOuter < (this.thickness / 2) + entity.size) {
+            // Check if already hit
+            if (this.hitList.includes(entity)) return false;
+
+            // Do NOT add to hitList here. 
+            // We return true to indicate "collision is happening".
+            // The Game loop decides if it counts as a "hit" (damage taken) and calls registerHit().
+            return true;
+        }
+
+        return false;
+    }
+
+    registerHit(entity) {
+        if (!this.hitList.includes(entity)) {
+            this.hitList.push(entity);
+        }
+    }
+}
+
+class BoulderProjectile extends Projectile {
+    constructor(x, y, vx, vy, damage, owner, color = '#8b4513') {
+        super(x, y, vx, vy, damage, owner, color, 24, 10.0); // Start size 24, Lifetime 10s
+        this.minSize = 8;
+        this.shrinkAmount = 8;
+    }
+
+    update(canvas, dt, particles) {
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
+        this.lifetime += dt;
+
+        // Bounce off walls
+        let bounced = false;
+        if (this.x < this.size || this.x > canvas.width - this.size) {
+            this.vx *= -1;
+            this.x = Math.max(this.size, Math.min(canvas.width - this.size, this.x));
+            bounced = true;
+        }
+        if (this.y < this.size || this.y > canvas.height - this.size) {
+            this.vy *= -1;
+            this.y = Math.max(this.size, Math.min(canvas.height - this.size, this.y));
+            bounced = true;
+        }
+
+        if (bounced) {
+            this.size -= this.shrinkAmount;
+            if (this.size <= this.minSize) {
+                this.active = false; // Destroy if too small
+            }
+
+            // Spawn particles
+            if (particles) {
+                for (let i = 0; i < 6; i++) {
+                    particles.push(new Particle(this.x, this.y, this.color, 4));
+                }
+            }
+        }
+
+        if (this.lifetime > this.maxLifetime) {
+            this.active = false;
+        }
+    }
+
+    takeHit(particles) {
+        this.size -= this.shrinkAmount;
+
+        // Spawn particles
+        if (particles) {
+            for (let i = 0; i < 4; i++) {
+                particles.push(new Particle(this.x, this.y, this.color, 3));
+            }
+        }
+
+        if (this.size <= this.minSize) {
+            this.active = false;
+            return true; // Destroyed
+        }
+        return false; // Just shrunk
     }
 }
