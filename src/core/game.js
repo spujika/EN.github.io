@@ -31,7 +31,7 @@ class Game {
         this.currentBossType = null; // Store boss type for the run
 
         // Boss Selection ['CrimsonReaper', 'VoidSorcerer', 'IronColossus', 'SwarmQueen', 'ChaosPhantom']
-        this.availableBosses = ['IronColossus'];
+        this.availableBosses = ['CrimsonReaper', 'IronColossus'];
 
         // Current Run Rewards
         this.currentReward = null;
@@ -715,3 +715,4 @@ document.oncontextmenu = function () {
 window.addEventListener('contextmenu', function (e) {
     e.preventDefault();
 }, false);
+
